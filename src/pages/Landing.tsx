@@ -45,7 +45,7 @@ export default function Landing() {
   const navigate = useNavigate()
 
   function handleCTA() {
-    track(eventos.cadastroIniciado, { origem: 'landing_hero' })
+    track(eventos.CADASTRO, { origem: 'landing_hero' })
     navigate('/cadastro')
   }
 

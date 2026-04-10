@@ -1,57 +1,66 @@
-import { formatarMoeda, labelTipo, labelRegime } from '../../lib/utils'
+import { formatarMoeda } from '../../lib/utils'
 import type { Simulacao } from '../../types'
 
 interface Props {
   simulacao: Simulacao
 }
 
-export default function ResumoScenario({ simulacao }: Props) {
-  const f = simulacao.formulario
+const labelTipo: Record<string, string> = {
+  promocao:     'Promoção',
+  aumento:      'Aumento Salarial',
+  contratacao:  'Nova Contratação',
+  ajuste_faixa: 'Ajuste de Faixa',
+}
 
+const labelRegime: Record<string, string> = { clt: 'CLT', pj: 'PJ' }
+
+export default function ResumoScenario({ simulacao: s }: Props) {
   return (
     <div className="card p-5">
       <h3 className="font-semibold text-gray-900 mb-4">Cenário Simulado</h3>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
         <div>
           <p className="text-gray-400">Tipo</p>
-          <p className="font-medium text-gray-900">{labelTipo[simulacao.tipo]}</p>
+          <p className="font-medium text-gray-900">{labelTipo[s.tipo]}</p>
         </div>
-        {f.colaborador && (
+        <div>
+          <p className="text-gray-400">Cargo atual</p>
+          <p className="font-medium text-gray-900">{s.cargo_atual}</p>
+        </div>
+        {s.cargo_proposto && (
           <div>
-            <p className="text-gray-400">Colaborador</p>
-            <p className="font-medium text-gray-900">{f.colaborador}</p>
+            <p className="text-gray-400">Cargo proposto</p>
+            <p className="font-medium text-gray-900">{s.cargo_proposto}</p>
           </div>
         )}
         <div>
-          <p className="text-gray-400">Cargo</p>
-          <p className="font-medium text-gray-900">{f.cargo}</p>
+          <p className="text-gray-400">Salário atual</p>
+          <p className="font-medium text-gray-900">{formatarMoeda(s.salario_atual)}</p>
         </div>
         <div>
-          <p className="text-gray-400">Nível</p>
-          <p className="font-medium text-gray-900">{f.nivel}</p>
+          <p className="text-gray-400">Salário proposto</p>
+          <p className="font-medium text-gray-900">{formatarMoeda(s.salario_proposto)}</p>
         </div>
-        {f.regime && (
+        <div>
+          <p className="text-gray-400">Regime</p>
+          <p className="font-medium text-gray-900">{labelRegime[s.regime]}</p>
+        </div>
+        {s.setor && (
           <div>
-            <p className="text-gray-400">Regime</p>
-            <p className="font-medium text-gray-900">{labelRegime[f.regime]}</p>
+            <p className="text-gray-400">Setor</p>
+            <p className="font-medium text-gray-900">{s.setor}</p>
           </div>
         )}
-        {f.salario_atual != null && (
+        {s.estado && (
           <div>
-            <p className="text-gray-400">Salário atual</p>
-            <p className="font-medium text-gray-900">{formatarMoeda(f.salario_atual)}</p>
+            <p className="text-gray-400">Estado</p>
+            <p className="font-medium text-gray-900">{s.estado}</p>
           </div>
         )}
-        {f.area && (
+        {s.nivel_senioridade && (
           <div>
-            <p className="text-gray-400">Área</p>
-            <p className="font-medium text-gray-900">{f.area}</p>
-          </div>
-        )}
-        {f.localizacao && (
-          <div>
-            <p className="text-gray-400">Localização</p>
-            <p className="font-medium text-gray-900">{f.localizacao}</p>
+            <p className="text-gray-400">Senioridade</p>
+            <p className="font-medium text-gray-900 capitalize">{s.nivel_senioridade}</p>
           </div>
         )}
       </div>

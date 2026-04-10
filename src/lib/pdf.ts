@@ -4,8 +4,8 @@ import type { Simulacao } from '../types'
 
 export function gerarPDF(simulacao: Simulacao): void {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' })
+  if (!simulacao.resultado) return
   const resultado = simulacao.resultado
-  const f = simulacao.formulario
 
   const largura = doc.internal.pageSize.getWidth()
   let y = 20
@@ -48,20 +48,21 @@ export function gerarPDF(simulacao: Simulacao): void {
   y = 24
 
   // Título
-  linha(`${labelTipo[simulacao.tipo]} — ${f.cargo}`, 16, true, [20, 20, 20])
-  linha(`Gerado em ${formatarData(simulacao.created_at)}`, 9, false, [120, 120, 120])
+  linha(`${labelTipo[simulacao.tipo]} — ${simulacao.cargo_atual}`, 16, true, [20, 20, 20])
+  linha(`Gerado em ${formatarData(simulacao.criado_em)}`, 9, false, [120, 120, 120])
   y += 2
 
   // Cenário
   secao('Cenário Simulado')
   const campos = [
     ['Tipo', labelTipo[simulacao.tipo]],
-    f.colaborador ? ['Colaborador', f.colaborador] : null,
-    ['Cargo', f.cargo],
-    ['Nível', f.nivel],
-    f.salario_atual != null ? ['Salário atual', formatarMoeda(f.salario_atual)] : null,
-    f.area ? ['Área', f.area] : null,
-    f.localizacao ? ['Localização', f.localizacao] : null,
+    ['Cargo atual', simulacao.cargo_atual],
+    simulacao.cargo_proposto ? ['Cargo proposto', simulacao.cargo_proposto] : null,
+    ['Salário atual', formatarMoeda(simulacao.salario_atual)],
+    ['Salário proposto', formatarMoeda(simulacao.salario_proposto)],
+    ['Regime', simulacao.regime.toUpperCase()],
+    simulacao.setor ? ['Setor', simulacao.setor] : null,
+    simulacao.estado ? ['Estado', simulacao.estado] : null,
   ].filter(Boolean) as [string, string][]
 
   campos.forEach(([chave, valor]) => {
@@ -186,5 +187,5 @@ export function gerarPDF(simulacao: Simulacao): void {
     )
   }
 
-  doc.save(`RemunaIA_${simulacao.tipo}_${f.cargo.replace(/\s+/g, '_')}.pdf`)
+  doc.save(`RemunaIA_${simulacao.tipo}_${simulacao.cargo_atual.replace(/\s+/g, '_')}.pdf`)
 }

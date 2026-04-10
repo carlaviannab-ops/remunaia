@@ -1,14 +1,15 @@
 // ============================================================
-// Tipos TypeScript — RemunaIA
+// Tipos TypeScript — RemunaIA (sincronizado com schema Supabase)
 // ============================================================
 
 export type TipoMovimento = 'promocao' | 'aumento' | 'contratacao' | 'ajuste_faixa'
 export type Regime = 'clt' | 'pj'
 export type Plano = 'trial' | 'starter' | 'professional' | 'enterprise' | 'cancelado'
 export type NivelRisco = 'baixo' | 'medio' | 'alto'
-export type Urgencia = 'imediata' | 'pode aguardar' | 'não recomendado agora'
 export type StatusSimulacao = 'pendente' | 'processando' | 'concluido' | 'erro'
+export type NivelSenioridade = 'junior' | 'pleno' | 'senior' | 'especialista' | 'lideranca'
 
+// ---- Profile (tabela: public.profiles) ----
 export interface Profile {
   id: string
   nome: string
@@ -16,12 +17,15 @@ export interface Profile {
   setor_empresa?: string
   plano: Plano
   simulacoes_usadas_mes: number
-  trial_expira_em: string
+  mes_contagem_simulacoes?: string
+  trial_expira_em?: string
   stripe_customer_id?: string
+  stripe_subscription_id?: string
   criado_em: string
   atualizado_em: string
 }
 
+// ---- Formulário — espelha colunas da tabela simulacoes ----
 export interface FormularioSimulacao {
   tipo: TipoMovimento
   cargo_atual: string
@@ -38,64 +42,59 @@ export interface FormularioSimulacao {
   salario_medio_pares?: number
   historico_avaliacao?: string
   politica_salarial?: string
-  nivel_senioridade?: string
+  nivel_senioridade?: NivelSenioridade
   tempo_cargo?: string
 }
 
+// ---- Resultado JSON (campo resultado JSONB) ----
 export interface TabelaFinanceiraItem {
-  cenario: string
-  salario_mensal: number
+  componente: string
+  valor_atual: number
+  valor_proposto: number
   variacao_percentual: number
-  custo_anual_incremental: number
+  custo_total_empresa: number
 }
 
 export interface BenchmarkMercado {
-  fonte: string
   p25: number
   p50: number
   p75: number
-  p90: number
-  posicionamento_atual: string
-  posicionamento_proposto: string
-  ajuste_setor: string
-  nota: string
+  fonte: string
 }
 
 export interface EquidadeInterna {
-  analise: string
-  risco_distorcao: NivelRisco
-  recomendacao_equidade: string
+  status: 'adequado' | 'atencao' | 'critico'
+  posicao_relativa: string
+  minimo_grupo: number
+  mediana_grupo: number
+  maximo_grupo: number
+  observacao?: string
 }
 
 export interface Risco {
-  risco: string
   nivel: NivelRisco
   descricao: string
-  mitigacao: string
+  mitigacao?: string
 }
 
 export interface Recomendacao {
-  decisao: string
-  salario_recomendado: number
+  decisao: 'aprovado' | 'aprovado_com_ressalvas' | 'reprovado' | 'aguardar'
   justificativa: string
-  condicoes: string
-  urgencia: Urgencia
+  salario_sugerido?: number
+  percentual_sugerido?: number
+  proximos_passos?: string[]
 }
 
 export interface ResultadoSimulacao {
-  resumo_cenario: string
-  simulacao_financeira: {
-    tabela: TabelaFinanceiraItem[]
-    nota: string
-  }
+  tabela_financeira: TabelaFinanceiraItem[]
   benchmark_mercado: BenchmarkMercado
   equidade_interna: EquidadeInterna
   riscos: Risco[]
   recomendacao: Recomendacao
-  conclusao_estrategica: string
-  suposicoes_adotadas: string[]
+  conclusao: string
 }
 
+// ---- Simulação (tabela: public.simulacoes) ----
 export interface Simulacao {
   id: string
   user_id: string
@@ -108,6 +107,11 @@ export interface Simulacao {
   setor: string
   estado: string
   contexto_adicional?: string
+  budget_informado: boolean
+  budget_valor?: number
+  pares_existem: boolean
+  salario_medio_pares?: number
+  nivel_senioridade?: NivelSenioridade
   resultado?: ResultadoSimulacao
   status: StatusSimulacao
   erro_mensagem?: string
@@ -116,6 +120,7 @@ export interface Simulacao {
   concluido_em?: string
 }
 
+// ---- Controle de limites ----
 export interface LimiteSimulacao {
   pode_simular: boolean
   motivo?: 'trial_expirado' | 'limite_mensal_atingido' | 'plano_cancelado'

@@ -14,13 +14,13 @@ const opcoes: { tipo: TipoMovimento; titulo: string; descricao: string; icone: s
     icone: '🚀',
   },
   {
-    tipo: 'aumento_salarial',
+    tipo: 'aumento',
     titulo: 'Aumento Salarial',
     descricao: 'Simule um aumento de mérito ou reajuste e compare com o mercado.',
     icone: '📈',
   },
   {
-    tipo: 'nova_contratacao',
+    tipo: 'contratacao',
     titulo: 'Nova Contratação',
     descricao: 'Defina a proposta salarial ideal para atrair o melhor candidato.',
     icone: '🤝',

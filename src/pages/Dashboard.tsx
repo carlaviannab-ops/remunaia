@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
-import { formatarMoeda, formatarData, labelTipo, corRisco } from '../lib/utils'
+import { formatarMoeda, formatarData, labelTipo } from '../lib/utils'
 import Badge from '../components/ui/Badge'
 import Spinner from '../components/ui/Spinner'
 import type { Simulacao } from '../types'
@@ -18,7 +18,7 @@ export default function Dashboard() {
       const { data } = await supabase
         .from('simulacoes')
         .select('*')
-        .order('created_at', { ascending: false })
+        .order('criado_em', { ascending: false })
         .limit(5)
       if (data) setSimulacoes(data)
       setLoading(false)
@@ -26,10 +26,8 @@ export default function Dashboard() {
     fetchSimulacoes()
   }, [])
 
-  const totalSimulacoes = simulacoes.length
   const impactoTotal = simulacoes.reduce((acc, s) => {
-    const resultado = s.resultado as any
-    return acc + (resultado?.tabela_financeira?.[0]?.custo_total_empresa ?? 0)
+    return acc + (s.salario_proposto - s.salario_atual) * 12
   }, 0)
 
   return (
@@ -40,13 +38,10 @@ export default function Dashboard() {
             Olá, {profile?.nome?.split(' ')[0]} 👋
           </h1>
           <p className="text-gray-500 text-sm mt-1">
-            Bem-vindo ao seu painel de simulações de remuneração
+            Painel de simulações de remuneração
           </p>
         </div>
-        <button
-          onClick={() => navigate('/simulacao/nova')}
-          className="btn-primary flex items-center gap-2"
-        >
+        <button onClick={() => navigate('/simulacao/nova')} className="btn-primary flex items-center gap-2">
           <span>➕</span> Nova Simulação
         </button>
       </div>
@@ -55,18 +50,16 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="card p-5">
           <p className="text-sm text-gray-500">Simulações realizadas</p>
-          <p className="text-3xl font-bold text-primary-700 mt-1">{totalSimulacoes}</p>
+          <p className="text-3xl font-bold text-primary-700 mt-1">{simulacoes.length}</p>
         </div>
         <div className="card p-5">
-          <p className="text-sm text-gray-500">Impacto total analisado</p>
-          <p className="text-3xl font-bold text-primary-700 mt-1">
-            {formatarMoeda(impactoTotal)}
-          </p>
+          <p className="text-sm text-gray-500">Impacto salarial anual analisado</p>
+          <p className="text-3xl font-bold text-primary-700 mt-1">{formatarMoeda(impactoTotal)}</p>
         </div>
         <div className="card p-5">
           <p className="text-sm text-gray-500">Plano atual</p>
           <p className="text-3xl font-bold text-primary-700 mt-1 capitalize">
-            {profile?.plano ?? 'Starter'}
+            {profile?.plano ?? 'Trial'}
           </p>
         </div>
       </div>
@@ -76,46 +69,35 @@ export default function Dashboard() {
         <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
           <h2 className="font-semibold text-gray-900">Simulações Recentes</h2>
           {simulacoes.length > 0 && (
-            <button
-              onClick={() => navigate('/historico')}
-              className="text-sm text-primary-600 hover:underline"
-            >
+            <button onClick={() => navigate('/historico')} className="text-sm text-primary-600 hover:underline">
               Ver todas
             </button>
           )}
         </div>
 
         {loading ? (
-          <div className="flex justify-center p-10">
-            <Spinner tamanho="md" />
-          </div>
+          <div className="flex justify-center p-10"><Spinner tamanho="md" /></div>
         ) : simulacoes.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-gray-400 text-sm">Nenhuma simulação realizada ainda.</p>
-            <button
-              onClick={() => navigate('/simulacao/nova')}
-              className="btn-primary mt-4"
-            >
+            <button onClick={() => navigate('/simulacao/nova')} className="btn-primary mt-4">
               Criar primeira simulação
             </button>
           </div>
         ) : (
           <div className="divide-y divide-gray-50">
             {simulacoes.map(sim => {
-              const resultado = sim.resultado as any
-              const risco = resultado?.riscos?.[0]?.nivel ?? 'baixo'
+              const risco = sim.resultado?.riscos?.[0]?.nivel ?? 'baixo'
               return (
                 <div
                   key={sim.id}
-                  onClick={() => navigate(`/simulacao/${sim.id}`)}
+                  onClick={() => navigate(`/simulacao/${sim.id}/resultado`)}
                   className="px-5 py-4 flex items-center justify-between hover:bg-gray-50 cursor-pointer transition-colors"
                 >
                   <div>
-                    <p className="font-medium text-gray-900 text-sm">
-                      {sim.formulario.cargo} — {sim.formulario.colaborador ?? 'Novo colaborador'}
-                    </p>
+                    <p className="font-medium text-gray-900 text-sm">{sim.cargo_atual}</p>
                     <p className="text-xs text-gray-400 mt-0.5">
-                      {labelTipo[sim.tipo]} · {formatarData(sim.created_at)}
+                      {labelTipo[sim.tipo]} · {formatarData(sim.criado_em)}
                     </p>
                   </div>
                   <div className="flex items-center gap-3">

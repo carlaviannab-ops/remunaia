@@ -11,16 +11,31 @@ const PASSOS = ['Tipo', 'Dados', 'Contexto']
 export default function NovaSimulacao() {
   const [passo, setPasso] = useState(1)
   const [tipo, setTipo] = useState<TipoMovimento | ''>('')
-  const [dados, setDados] = useState<Partial<FormularioSimulacao>>({})
+  const [dados, setDados] = useState<Partial<FormularioSimulacao>>({
+    budget_informado: false,
+    pares_existem: false,
+  })
+
+  function handleTipoChange(novoTipo: TipoMovimento) {
+    setTipo(novoTipo)
+    // Limpa campos irrelevantes ao mudar o tipo
+    setDados({
+      budget_informado: false,
+      pares_existem: false,
+      regime: dados.regime,
+      setor: dados.setor,
+      estado: dados.estado,
+    })
+  }
   const { simular, loading, erro } = useSimulacao()
 
-  function atualizarCampo(campo: keyof FormularioSimulacao, valor: string | number) {
+  function atualizarCampo(campo: keyof FormularioSimulacao, valor: string | number | boolean) {
     setDados(prev => ({ ...prev, [campo]: valor }))
   }
 
   async function handleSubmit() {
     if (!tipo) return
-    await simular(tipo, { ...dados, tipo } as FormularioSimulacao)
+    await simular({ ...dados, tipo } as FormularioSimulacao)
   }
 
   return (
@@ -31,13 +46,8 @@ export default function NovaSimulacao() {
         <WizardProgress passoAtual={passo} totalPassos={3} labels={PASSOS} />
 
         {passo === 1 && (
-          <Passo1Tipo
-            valor={tipo}
-            onChange={setTipo}
-            onProximo={() => setPasso(2)}
-          />
+          <Passo1Tipo valor={tipo} onChange={handleTipoChange} onProximo={() => setPasso(2)} />
         )}
-
         {passo === 2 && (
           <Passo2Dados
             tipo={tipo as TipoMovimento}
@@ -47,9 +57,9 @@ export default function NovaSimulacao() {
             onVoltar={() => setPasso(1)}
           />
         )}
-
         {passo === 3 && (
           <Passo3Contexto
+            tipo={tipo as TipoMovimento}
             dados={dados}
             onChange={atualizarCampo}
             onSubmit={handleSubmit}

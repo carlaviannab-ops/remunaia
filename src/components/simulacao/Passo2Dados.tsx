@@ -1,67 +1,108 @@
-import type { FormularioSimulacao, TipoMovimento, Regime } from '../../types'
+import type { FormularioSimulacao, TipoMovimento, Regime, NivelSenioridade } from '../../types'
 
 interface Props {
   tipo: TipoMovimento
   dados: Partial<FormularioSimulacao>
-  onChange: (campo: keyof FormularioSimulacao, valor: string | number) => void
+  onChange: (campo: keyof FormularioSimulacao, valor: string | number | boolean) => void
   onProximo: () => void
   onVoltar: () => void
 }
 
+const niveis: NivelSenioridade[] = ['junior', 'pleno', 'senior', 'especialista', 'lideranca']
+const niveisLabel: Record<NivelSenioridade, string> = {
+  junior: 'Júnior', pleno: 'Pleno', senior: 'Sênior', especialista: 'Especialista', lideranca: 'Liderança',
+}
+
+const UFS = ['AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT','PA','PB','PE','PI','PR','RJ','RN','RO','RR','RS','SC','SE','SP','TO']
+
+function config(tipo: TipoMovimento) {
+  switch (tipo) {
+    case 'promocao': return {
+      labelCargo: 'Cargo atual *',
+      placeholderCargo: 'Ex: Analista de RH',
+      labelSalarioAtual: 'Salário atual (R$) *',
+      labelSalarioProposto: 'Novo salário proposto (R$) *',
+      mostrarCargoAtual: true,
+      mostrarCargoProposto: true,
+      mostrarSalarioAtual: true,
+      mostrarTempoCargo: true,
+    }
+    case 'aumento': return {
+      labelCargo: 'Cargo *',
+      placeholderCargo: 'Ex: Analista de RH',
+      labelSalarioAtual: 'Salário atual (R$) *',
+      labelSalarioProposto: 'Novo salário proposto (R$) *',
+      mostrarCargoAtual: true,
+      mostrarCargoProposto: false,
+      mostrarSalarioAtual: true,
+      mostrarTempoCargo: true,
+    }
+    case 'contratacao': return {
+      labelCargo: 'Cargo a contratar *',
+      placeholderCargo: 'Ex: Engenheiro de Software',
+      labelSalarioAtual: '',
+      labelSalarioProposto: 'Oferta salarial (R$) *',
+      mostrarCargoAtual: true,
+      mostrarCargoProposto: false,
+      mostrarSalarioAtual: false,
+      mostrarTempoCargo: false,
+    }
+    case 'ajuste_faixa': return {
+      labelCargo: 'Cargo / grupo de cargos *',
+      placeholderCargo: 'Ex: Analista de TI (todos os níveis)',
+      labelSalarioAtual: 'Faixa atual — midpoint (R$) *',
+      labelSalarioProposto: 'Nova faixa proposta — midpoint (R$) *',
+      mostrarCargoAtual: true,
+      mostrarCargoProposto: false,
+      mostrarSalarioAtual: true,
+      mostrarTempoCargo: false,
+    }
+  }
+}
+
 export default function Passo2Dados({ tipo, dados, onChange, onProximo, onVoltar }: Props) {
-  const ehContratacao = tipo === 'nova_contratacao'
+  const cfg = config(tipo)
 
   const camposValidos = () => {
-    if (!dados.cargo || !dados.nivel || !dados.regime) return false
-    if (!ehContratacao && !dados.salario_atual) return false
-    if (tipo === 'promocao' && !dados.nivel_proposto) return false
-    if (tipo === 'aumento_salarial' && !dados.percentual_aumento) return false
-    if (tipo === 'ajuste_faixa' && (!dados.faixa_minima || !dados.faixa_maxima)) return false
+    if (!dados.cargo_atual || !dados.regime || !dados.setor || !dados.estado) return false
+    if (cfg.mostrarSalarioAtual && !dados.salario_atual) return false
+    if (!dados.salario_proposto) return false
+    if (tipo === 'promocao' && !dados.cargo_proposto) return false
     return true
   }
 
   return (
     <div>
       <h2 className="text-lg font-semibold text-gray-900 mb-1">Dados da simulação</h2>
-      <p className="text-sm text-gray-500 mb-6">Preencha as informações do colaborador e do cargo</p>
+      <p className="text-sm text-gray-500 mb-6">Preencha as informações do cargo</p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-        {!ehContratacao && (
+
+        {/* Cargo atual / a contratar */}
+        <div className={tipo === 'ajuste_faixa' ? 'sm:col-span-2' : ''}>
+          <label className="label">{cfg.labelCargo}</label>
+          <input
+            className="input"
+            placeholder={cfg.placeholderCargo}
+            value={dados.cargo_atual ?? ''}
+            onChange={e => onChange('cargo_atual', e.target.value)}
+          />
+        </div>
+
+        {/* Cargo proposto — só promoção */}
+        {cfg.mostrarCargoProposto && (
           <div>
-            <label className="label">Nome do colaborador</label>
+            <label className="label">Cargo proposto *</label>
             <input
               className="input"
-              placeholder="Ex: Maria Silva"
-              value={dados.colaborador ?? ''}
-              onChange={e => onChange('colaborador', e.target.value)}
+              placeholder="Ex: Coordenador de RH"
+              value={dados.cargo_proposto ?? ''}
+              onChange={e => onChange('cargo_proposto', e.target.value)}
             />
           </div>
         )}
 
-        <div>
-          <label className="label">Cargo *</label>
-          <input
-            className="input"
-            placeholder="Ex: Analista de RH"
-            value={dados.cargo ?? ''}
-            onChange={e => onChange('cargo', e.target.value)}
-          />
-        </div>
-
-        <div>
-          <label className="label">Nível atual *</label>
-          <select
-            className="input"
-            value={dados.nivel ?? ''}
-            onChange={e => onChange('nivel', e.target.value)}
-          >
-            <option value="">Selecione...</option>
-            {['Junior', 'Pleno', 'Senior', 'Especialista', 'Coordenador', 'Gerente', 'Diretor'].map(n => (
-              <option key={n}>{n}</option>
-            ))}
-          </select>
-        </div>
-
+        {/* Regime */}
         <div>
           <label className="label">Regime *</label>
           <select
@@ -75,9 +116,10 @@ export default function Passo2Dados({ tipo, dados, onChange, onProximo, onVoltar
           </select>
         </div>
 
-        {!ehContratacao && (
+        {/* Salário atual — oculto em contratação */}
+        {cfg.mostrarSalarioAtual && (
           <div>
-            <label className="label">Salário atual (R$) *</label>
+            <label className="label">{cfg.labelSalarioAtual}</label>
             <input
               className="input"
               type="number"
@@ -89,83 +131,70 @@ export default function Passo2Dados({ tipo, dados, onChange, onProximo, onVoltar
           </div>
         )}
 
-        {tipo === 'promocao' && (
-          <div>
-            <label className="label">Nível proposto *</label>
-            <select
-              className="input"
-              value={dados.nivel_proposto ?? ''}
-              onChange={e => onChange('nivel_proposto', e.target.value)}
-            >
-              <option value="">Selecione...</option>
-              {['Pleno', 'Senior', 'Especialista', 'Coordenador', 'Gerente', 'Diretor'].map(n => (
-                <option key={n}>{n}</option>
-              ))}
-            </select>
-          </div>
-        )}
+        {/* Salário proposto */}
+        <div>
+          <label className="label">{cfg.labelSalarioProposto}</label>
+          <input
+            className="input"
+            type="number"
+            min={0}
+            placeholder="Ex: 6000"
+            value={dados.salario_proposto ?? ''}
+            onChange={e => onChange('salario_proposto', Number(e.target.value))}
+          />
+        </div>
 
-        {tipo === 'aumento_salarial' && (
+        {/* Setor */}
+        <div>
+          <label className="label">Setor *</label>
+          <input
+            className="input"
+            placeholder="Ex: Tecnologia, Varejo, Saúde..."
+            value={dados.setor ?? ''}
+            onChange={e => onChange('setor', e.target.value)}
+          />
+        </div>
+
+        {/* Estado */}
+        <div>
+          <label className="label">Estado *</label>
+          <select
+            className="input"
+            value={dados.estado ?? ''}
+            onChange={e => onChange('estado', e.target.value)}
+          >
+            <option value="">Selecione...</option>
+            {UFS.map(uf => <option key={uf}>{uf}</option>)}
+          </select>
+        </div>
+
+        {/* Nível de senioridade */}
+        <div>
+          <label className="label">Nível de senioridade</label>
+          <select
+            className="input"
+            value={dados.nivel_senioridade ?? ''}
+            onChange={e => onChange('nivel_senioridade', e.target.value as NivelSenioridade)}
+          >
+            <option value="">Selecione (opcional)</option>
+            {niveis.map(n => (
+              <option key={n} value={n}>{niveisLabel[n]}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Tempo no cargo — só promoção e aumento */}
+        {cfg.mostrarTempoCargo && (
           <div>
-            <label className="label">Percentual de aumento (%) *</label>
+            <label className="label">Tempo no cargo</label>
             <input
               className="input"
-              type="number"
-              min={0}
-              max={100}
-              placeholder="Ex: 15"
-              value={dados.percentual_aumento ?? ''}
-              onChange={e => onChange('percentual_aumento', Number(e.target.value))}
+              placeholder="Ex: 2 anos"
+              value={dados.tempo_cargo ?? ''}
+              onChange={e => onChange('tempo_cargo', e.target.value)}
             />
           </div>
         )}
-
-        {tipo === 'ajuste_faixa' && (
-          <>
-            <div>
-              <label className="label">Faixa mínima (R$) *</label>
-              <input
-                className="input"
-                type="number"
-                min={0}
-                placeholder="Ex: 4000"
-                value={dados.faixa_minima ?? ''}
-                onChange={e => onChange('faixa_minima', Number(e.target.value))}
-              />
-            </div>
-            <div>
-              <label className="label">Faixa máxima (R$) *</label>
-              <input
-                className="input"
-                type="number"
-                min={0}
-                placeholder="Ex: 8000"
-                value={dados.faixa_maxima ?? ''}
-                onChange={e => onChange('faixa_maxima', Number(e.target.value))}
-              />
-            </div>
-          </>
-        )}
-
-        <div>
-          <label className="label">Área / Departamento</label>
-          <input
-            className="input"
-            placeholder="Ex: Recursos Humanos"
-            value={dados.area ?? ''}
-            onChange={e => onChange('area', e.target.value)}
-          />
-        </div>
-
-        <div>
-          <label className="label">Localização</label>
-          <input
-            className="input"
-            placeholder="Ex: São Paulo, SP"
-            value={dados.localizacao ?? ''}
-            onChange={e => onChange('localizacao', e.target.value)}
-          />
-        </div>
       </div>
 
       <div className="flex justify-between">

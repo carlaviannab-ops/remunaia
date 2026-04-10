@@ -30,7 +30,7 @@ export default function Resultado() {
       .then(({ data }) => {
         setSimulacao(data)
         setLoading(false)
-        if (data) track(eventos.resultadoVisualizado, { tipo: data.tipo })
+        if (data) track(eventos.RESULTADO_VISTO, { tipo: data.tipo })
       })
   }, [id])
 
@@ -39,18 +39,14 @@ export default function Resultado() {
     setExportando(true)
     try {
       gerarPDF(simulacao)
-      track(eventos.pdfExportado, { tipo: simulacao.tipo })
+      track(eventos.PDF_EXPORTADO, { tipo: simulacao.tipo })
     } finally {
       setExportando(false)
     }
   }
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <Spinner tamanho="lg" />
-      </div>
-    )
+    return <div className="flex justify-center items-center h-64"><Spinner tamanho="lg" /></div>
   }
 
   if (!simulacao) {
@@ -64,15 +60,12 @@ export default function Resultado() {
     )
   }
 
-  const resultado = simulacao.resultado
+  const r = simulacao.resultado
 
   return (
     <div className="max-w-3xl mx-auto space-y-5">
       <div className="flex items-center justify-between">
-        <button
-          onClick={() => navigate(-1)}
-          className="text-sm text-gray-500 hover:text-gray-900 flex items-center gap-1"
-        >
+        <button onClick={() => navigate(-1)} className="text-sm text-gray-500 hover:text-gray-900 flex items-center gap-1">
           ← Voltar
         </button>
         <h1 className="text-xl font-bold text-gray-900">Resultado da Simulação</h1>
@@ -81,33 +74,33 @@ export default function Resultado() {
 
       <ResumoScenario simulacao={simulacao} />
 
-      {resultado.tabela_financeira?.length > 0 && (
-        <TabelaFinanceira itens={resultado.tabela_financeira} />
+      {r?.tabela_financeira && r.tabela_financeira.length > 0 && (
+        <TabelaFinanceira itens={r.tabela_financeira} />
       )}
 
-      {resultado.benchmark_mercado && (
+      {r?.benchmark_mercado && (
         <BenchmarkBar
-          benchmark={resultado.benchmark_mercado}
-          salarioAtual={simulacao.formulario.salario_atual}
-          salarioProposto={resultado.recomendacao?.salario_sugerido}
+          benchmark={r.benchmark_mercado}
+          salarioAtual={simulacao.salario_atual}
+          salarioProposto={simulacao.salario_proposto}
         />
       )}
 
-      {resultado.equidade_interna && (
-        <EquidadeCard equidade={resultado.equidade_interna} />
+      {r?.equidade_interna && (
+        <EquidadeCard equidade={r.equidade_interna} />
       )}
 
-      {resultado.riscos?.length > 0 && (
-        <TabelaRiscos riscos={resultado.riscos} />
+      {r?.riscos && r.riscos.length > 0 && (
+        <TabelaRiscos riscos={r.riscos} />
       )}
 
-      {resultado.recomendacao && (
-        <RecomendacaoCard recomendacao={resultado.recomendacao} />
+      {r?.recomendacao && (
+        <RecomendacaoCard recomendacao={r.recomendacao} />
       )}
 
-      {resultado.conclusao && (
+      {r?.conclusao && (
         <ConclusaoCard
-          conclusao={resultado.conclusao}
+          conclusao={r.conclusao}
           onExportarPDF={handleExportarPDF}
           onNovaSimulacao={() => navigate('/simulacao/nova')}
           exportando={exportando}

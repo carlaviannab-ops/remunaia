@@ -11,6 +11,7 @@ import Historico from './pages/Historico'
 import SimulacaoDetalhe from './pages/SimulacaoDetalhe'
 import Planos from './pages/Planos'
 import Conta from './pages/Conta'
+import Admin from './pages/Admin'
 
 // Layout
 import Layout from './components/layout/Layout'
@@ -39,6 +40,7 @@ const router = createBrowserRouter([
       { path: 'simulacao/:id',               element: <SimulacaoDetalhe /> },
       { path: 'planos',                      element: <Planos /> },
       { path: 'conta',                       element: <Conta /> },
+      { path: 'admin',                       element: <Admin /> },
     ]
   }
 ])
