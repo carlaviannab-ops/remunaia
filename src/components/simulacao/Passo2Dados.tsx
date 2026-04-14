@@ -197,6 +197,73 @@ export default function Passo2Dados({ tipo, dados, onChange, onProximo, onVoltar
         )}
       </div>
 
+      {/* Benefícios — Total Rewards (não aparece em ajuste_faixa) */}
+      {tipo !== 'ajuste_faixa' && (
+        <div className="mb-8">
+          <h3 className="text-sm font-semibold text-gray-700 mb-1">Benefícios (opcional)</h3>
+          <p className="text-xs text-gray-400 mb-4">Informe para calcular o pacote Total Rewards completo</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="label">Vale-refeição / alimentação (R$/mês)</label>
+              <input
+                className="input"
+                type="number"
+                min={0}
+                placeholder="Ex: 600"
+                value={dados.vr_mensal ?? ''}
+                onChange={e => onChange('vr_mensal', Number(e.target.value))}
+              />
+            </div>
+            <div>
+              <label className="label">Vale-transporte (R$/mês)</label>
+              <input
+                className="input"
+                type="number"
+                min={0}
+                placeholder="Ex: 200"
+                value={dados.vt_mensal ?? ''}
+                onChange={e => onChange('vt_mensal', Number(e.target.value))}
+              />
+            </div>
+            <div>
+              <label className="label">Plano de saúde — custo empresa (R$/mês)</label>
+              <input
+                className="input"
+                type="number"
+                min={0}
+                placeholder="Ex: 500"
+                value={dados.plano_saude_mensal ?? ''}
+                onChange={e => onChange('plano_saude_mensal', Number(e.target.value))}
+              />
+            </div>
+            <div>
+              <label className="label">PLR — percentual sobre salário anual (%)</label>
+              <input
+                className="input"
+                type="number"
+                min={0}
+                max={200}
+                placeholder="Ex: 100 (= 1 salário)"
+                value={dados.plr_percentual ?? ''}
+                onChange={e => onChange('plr_percentual', Number(e.target.value))}
+              />
+            </div>
+            <div>
+              <label className="label">Bônus target — percentual sobre salário anual (%)</label>
+              <input
+                className="input"
+                type="number"
+                min={0}
+                max={300}
+                placeholder="Ex: 20"
+                value={dados.bonus_target_percentual ?? ''}
+                onChange={e => onChange('bonus_target_percentual', Number(e.target.value))}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex justify-between">
         <button onClick={onVoltar} className="btn-secondary">← Voltar</button>
         <button onClick={onProximo} disabled={!camposValidos()} className="btn-primary disabled:opacity-40">

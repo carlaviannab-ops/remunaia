@@ -1,13 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-// Apenas modelos confirmados disponíveis para chaves do Google AI Studio
-const GEMINI_MODELS = [
-  'gemini-2.0-flash',
-  'gemini-2.0-flash-exp',
-  'gemini-2.0-flash-lite',
-]
-
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -18,13 +11,10 @@ const LIMITES: Record<string, number> = {
   trial: 3, starter: 20, professional: 999999, enterprise: 999999, cancelado: 0,
 }
 
-const PROMPT = `Você é um consultor sênior especialista em remuneração estratégica no Brasil.
-Analise a simulação abaixo e retorne APENAS JSON válido (sem markdown, sem texto extra).
+const PROMPT_SISTEMA = `Você é um consultor sênior especialista em remuneração estratégica no Brasil.
+Analise a simulação e retorne APENAS JSON válido (sem markdown, sem texto extra).
 
-DADOS DA SIMULAÇÃO:
-{{DADOS}}
-
-Estrutura obrigatória do JSON:
+Estrutura obrigatória:
 {
   "tabela_financeira": [
     { "componente": "Salário Base", "valor_atual": number, "valor_proposto": number, "variacao_percentual": number, "custo_total_empresa": number },
@@ -35,56 +25,74 @@ Estrutura obrigatória do JSON:
   "equidade_interna": { "status": "adequado", "posicao_relativa": "string", "minimo_grupo": number, "mediana_grupo": number, "maximo_grupo": number, "observacao": "string" },
   "riscos": [{ "nivel": "baixo", "descricao": "string", "mitigacao": "string" }],
   "recomendacao": { "decisao": "aprovado", "justificativa": "string detalhada em português", "salario_sugerido": number, "percentual_sugerido": number, "proximos_passos": ["string"] },
-  "conclusao": "string com conclusão estratégica em português"
-}`
-
-async function sleep(ms: number) {
-  return new Promise(resolve => setTimeout(resolve, ms))
+  "conclusao": "string com conclusão estratégica em português",
+  "total_rewards": {
+    "salario_base": number,
+    "vr_mensal": number,
+    "vt_mensal": number,
+    "plano_saude_mensal": number,
+    "plr_anual": number,
+    "bonus_anual": number,
+    "total_anual": number,
+    "compa_ratio": number,
+    "posicao_faixa": "abaixo"
+  }
 }
 
-async function chamarGemini(apiKey: string, prompt: string): Promise<{ data: any; modelUsed: string }> {
-  for (const model of GEMINI_MODELS) {
-    // Tenta até 2 vezes por modelo (lida com limite por minuto)
-    for (let tentativa = 1; tentativa <= 2; tentativa++) {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`
-      console.log(`Tentando: ${model} (tentativa ${tentativa})`)
+Instruções para total_rewards (use o salário PROPOSTO):
+- salario_base: salário_proposto informado
+- vr_mensal, vt_mensal, plano_saude_mensal: use os valores informados no formulário (0 se não informado)
+- plr_anual: salario_base * 12 * (plr_percentual/100). Se não informado, use 0
+- bonus_anual: salario_base * 12 * (bonus_target_percentual/100). Se não informado, use 0
+- total_anual: (salario_base + vr_mensal + vt_mensal + plano_saude_mensal) * 12 + plr_anual + bonus_anual
+- compa_ratio: (salario_base / benchmark_mercado.p50) * 100, arredondado para 1 decimal
+- posicao_faixa: "abaixo" se compa_ratio < 90, "dentro" se entre 90 e 110, "acima" se > 110`
 
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.2, maxOutputTokens: 2048 },
-        }),
-      })
+// Modelos Groq em ordem de preferência
+const GROQ_MODELS = [
+  'llama-3.3-70b-versatile',
+  'llama-3.1-8b-instant',
+  'gemma2-9b-it',
+]
 
-      const body = await res.text()
+async function chamarGroq(apiKey: string, dados: string): Promise<{ texto: string; modelo: string }> {
+  for (const model of GROQ_MODELS) {
+    console.log(`Tentando Groq: ${model}`)
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model,
+        messages: [
+          { role: 'system', content: PROMPT_SISTEMA },
+          { role: 'user', content: `Analise esta simulação de remuneração:\n\n${dados}` },
+        ],
+        temperature: 0.2,
+        max_tokens: 2048,
+      }),
+    })
 
-      if (res.status === 404 || res.status === 400) {
-        console.log(`${model} não disponível (${res.status}), próximo...`)
-        break // passa para próximo modelo
-      }
+    const body = await res.text()
 
-      if (res.status === 429) {
-        if (tentativa === 1) {
-          console.log(`${model} com limite por minuto, aguardando 5s...`)
-          await sleep(5000)
-          continue // tenta de novo
-        }
-        console.log(`${model} ainda com 429 após retry, próximo modelo...`)
-        break
-      }
-
-      if (!res.ok) {
-        throw new Error(`Gemini ${res.status} (${model}): ${body.slice(0, 300)}`)
-      }
-
-      console.log(`Sucesso: ${model}`)
-      return { data: JSON.parse(body), modelUsed: model }
+    if (res.status === 429) {
+      console.log(`${model} com limite de taxa, tentando próximo...`)
+      continue
     }
+
+    if (!res.ok) {
+      throw new Error(`Groq ${res.status} (${model}): ${body.slice(0, 300)}`)
+    }
+
+    const json = JSON.parse(body)
+    const texto = json.choices?.[0]?.message?.content ?? ''
+    console.log(`Sucesso com Groq: ${model}`)
+    return { texto, modelo: model }
   }
 
-  throw new Error('cota_diaria_esgotada')
+  throw new Error('todos_modelos_groq_indisponiveis')
 }
 
 serve(async req => {
@@ -151,7 +159,7 @@ serve(async req => {
         nivel_senioridade: formulario.nivel_senioridade || null,
         tempo_cargo: formulario.tempo_cargo ?? null,
         status: 'processando',
-        prompt_version: '5.0',
+        prompt_version: '7.0',
       })
       .select('id')
       .single()
@@ -161,44 +169,32 @@ serve(async req => {
       return jsonError(`Erro ao criar simulação: ${insertErr.message}`, 500)
     }
 
-    const geminiKey = Deno.env.get('GEMINI_API_KEY')
-    if (!geminiKey) {
-      await supabase.from('simulacoes').update({ status: 'erro', erro_mensagem: 'GEMINI_API_KEY não configurada' }).eq('id', sim.id)
+    const groqKey = Deno.env.get('GROQ_API_KEY')
+    if (!groqKey) {
+      await supabase.from('simulacoes').update({ status: 'erro', erro_mensagem: 'GROQ_API_KEY não configurada' }).eq('id', sim.id)
       return jsonError('Chave da IA não configurada.', 500)
     }
 
     let resultado
-    let modeloUsado = ''
     try {
-      const prompt = PROMPT.replace('{{DADOS}}', JSON.stringify(formulario, null, 2))
-      const { data: geminiData, modelUsed } = await chamarGemini(geminiKey, prompt)
-      modeloUsado = modelUsed
+      const { texto, modelo } = await chamarGroq(groqKey, JSON.stringify(formulario, null, 2))
+      console.log(`Modelo usado: ${modelo}`)
 
-      const texto = geminiData.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
       const jsonMatch = texto.match(/\{[\s\S]*\}/)
       if (!jsonMatch) throw new Error(`JSON não encontrado. Preview: ${texto.slice(0, 200)}`)
       resultado = JSON.parse(jsonMatch[0])
     } catch (e: any) {
       const erroMsg = e.message ?? 'Erro desconhecido'
       console.error('Erro IA:', erroMsg)
-
-      const msgAmigavel = erroMsg === 'cota_diaria_esgotada'
-        ? 'Limite diário da IA atingido. Tente amanhã ou contate o suporte.'
-        : erroMsg.slice(0, 500)
-
-      await supabase.from('simulacoes').update({ status: 'erro', erro_mensagem: msgAmigavel }).eq('id', sim.id)
-      return jsonError(
-        erroMsg === 'cota_diaria_esgotada'
-          ? 'Limite diário da IA atingido. Tente amanhã.'
-          : 'Erro ao processar com IA. Tente novamente.',
-        502
-      )
+      await supabase.from('simulacoes').update({ status: 'erro', erro_mensagem: erroMsg.slice(0, 500) }).eq('id', sim.id)
+      return jsonError('Erro ao processar com IA. Tente novamente.', 502)
     }
 
-    await supabase.from('simulacoes').update({ resultado, status: 'concluido', concluido_em: new Date().toISOString() }).eq('id', sim.id)
-    await supabase.from('profiles').update({ simulacoes_usadas_mes: simulacoesUsadas + 1 }).eq('id', user.id)
+    await supabase.from('simulacoes').update({
+      resultado, status: 'concluido', concluido_em: new Date().toISOString(),
+    }).eq('id', sim.id)
 
-    console.log(`Simulação ${sim.id} concluída com ${modeloUsado}`)
+    await supabase.from('profiles').update({ simulacoes_usadas_mes: simulacoesUsadas + 1 }).eq('id', user.id)
 
     return new Response(JSON.stringify({ id: sim.id, resultado }), {
       headers: { 'Content-Type': 'application/json', ...CORS_HEADERS },

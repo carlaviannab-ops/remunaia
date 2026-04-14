@@ -25,7 +25,7 @@ export interface Profile {
   atualizado_em: string
 }
 
-// ---- Formulário — espelha colunas da tabela simulacoes ----
+// ---- Formulário — espelha colunas da tabela simulacoes + benefícios para IA ----
 export interface FormularioSimulacao {
   tipo: TipoMovimento
   cargo_atual: string
@@ -44,6 +44,12 @@ export interface FormularioSimulacao {
   politica_salarial?: string
   nivel_senioridade?: NivelSenioridade
   tempo_cargo?: string
+  // Benefícios (usados pela IA para calcular Total Rewards)
+  vr_mensal?: number
+  vt_mensal?: number
+  plano_saude_mensal?: number
+  plr_percentual?: number
+  bonus_target_percentual?: number
 }
 
 // ---- Resultado JSON (campo resultado JSONB) ----
@@ -85,6 +91,22 @@ export interface Recomendacao {
   proximos_passos?: string[]
 }
 
+// Total Rewards — pacote completo de remuneração
+export interface TotalRewards {
+  // Valores mensais (proposto)
+  salario_base: number
+  vr_mensal: number
+  vt_mensal: number
+  plano_saude_mensal: number
+  // Valores anuais
+  plr_anual: number
+  bonus_anual: number
+  total_anual: number
+  // Métricas de mercado
+  compa_ratio: number          // salário / P50 × 100 (ex: 95 = 5% abaixo da mediana)
+  posicao_faixa: 'abaixo' | 'dentro' | 'acima'
+}
+
 export interface ResultadoSimulacao {
   tabela_financeira: TabelaFinanceiraItem[]
   benchmark_mercado: BenchmarkMercado
@@ -92,6 +114,7 @@ export interface ResultadoSimulacao {
   riscos: Risco[]
   recomendacao: Recomendacao
   conclusao: string
+  total_rewards?: TotalRewards
 }
 
 // ---- Simulação (tabela: public.simulacoes) ----

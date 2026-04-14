@@ -10,6 +10,7 @@ import EquidadeCard from '../components/resultado/EquidadeCard'
 import TabelaRiscos from '../components/resultado/TabelaRiscos'
 import RecomendacaoCard from '../components/resultado/RecomendacaoCard'
 import ConclusaoCard from '../components/resultado/ConclusaoCard'
+import TotalRewardsCard from '../components/resultado/TotalRewardsCard'
 import Spinner from '../components/ui/Spinner'
 import type { Simulacao } from '../types'
 
@@ -83,6 +84,7 @@ export default function Resultado() {
           benchmark={r.benchmark_mercado}
           salarioAtual={simulacao.salario_atual}
           salarioProposto={simulacao.salario_proposto}
+          compaRatio={r.total_rewards?.compa_ratio}
         />
       )}
 
@@ -96,6 +98,10 @@ export default function Resultado() {
 
       {r?.recomendacao && (
         <RecomendacaoCard recomendacao={r.recomendacao} />
+      )}
+
+      {r?.total_rewards && r.total_rewards.salario_base > 0 && (
+        <TotalRewardsCard totalRewards={r.total_rewards} />
       )}
 
       {r?.conclusao && (

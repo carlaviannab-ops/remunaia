@@ -5,6 +5,7 @@ interface Props {
   benchmark: BenchmarkMercado
   salarioAtual?: number
   salarioProposto?: number
+  compaRatio?: number
 }
 
 function posicaoNoRange(valor: number, min: number, max: number) {
@@ -12,7 +13,7 @@ function posicaoNoRange(valor: number, min: number, max: number) {
   return Math.min(100, Math.max(0, ((valor - min) / (max - min)) * 100))
 }
 
-export default function BenchmarkBar({ benchmark, salarioAtual, salarioProposto }: Props) {
+export default function BenchmarkBar({ benchmark, salarioAtual, salarioProposto, compaRatio }: Props) {
   const { p25, p50, p75, fonte } = benchmark
   const min = p25 * 0.85
   const max = p75 * 1.15
@@ -83,7 +84,7 @@ export default function BenchmarkBar({ benchmark, salarioAtual, salarioProposto 
       </div>
 
       {(salarioAtual != null || salarioProposto != null) && (
-        <div className="mt-4 pt-4 border-t border-gray-100 flex gap-4 text-xs">
+        <div className="mt-4 pt-4 border-t border-gray-100 flex flex-wrap gap-4 text-xs">
           {salarioAtual != null && (
             <div className="flex items-center gap-1.5">
               <div className="w-2.5 h-2.5 rounded-full bg-gray-600" />
@@ -94,6 +95,14 @@ export default function BenchmarkBar({ benchmark, salarioAtual, salarioProposto 
             <div className="flex items-center gap-1.5">
               <div className="w-2.5 h-2.5 rounded-full bg-primary-600" />
               <span className="text-gray-500">Proposto: {formatarMoeda(salarioProposto)}</span>
+            </div>
+          )}
+          {compaRatio != null && (
+            <div className="flex items-center gap-1.5 ml-auto">
+              <span className="text-gray-400">Compa-ratio:</span>
+              <span className={`font-semibold ${compaRatio < 90 ? 'text-red-600' : compaRatio > 110 ? 'text-blue-600' : 'text-green-600'}`}>
+                {compaRatio.toFixed(1)}%
+              </span>
             </div>
           )}
         </div>
