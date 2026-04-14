@@ -46,7 +46,36 @@ Instruções para total_rewards (use o salário PROPOSTO):
 - bonus_anual: salario_base * 12 * (bonus_target_percentual/100). Se não informado, use 0
 - total_anual: (salario_base + vr_mensal + vt_mensal + plano_saude_mensal) * 12 + plr_anual + bonus_anual
 - compa_ratio: (salario_base / benchmark_mercado.p50) * 100, arredondado para 1 decimal
-- posicao_faixa: "abaixo" se compa_ratio < 90, "dentro" se entre 90 e 110, "acima" se > 110`
+- posicao_faixa: "abaixo" se compa_ratio < 90, "dentro" se entre 90 e 110, "acima" se > 110
+
+Adicione também os campos abaixo na raiz do JSON:
+
+"roi_retencao": {
+  "custo_turnover_estimado": number,
+  "custo_aumento_anual": number,
+  "roi_multiplicador": number,
+  "fator_utilizado": number,
+  "interpretacao": "string em português"
+}
+Instruções para roi_retencao (só calcule se tipo != "ajuste_faixa" e salario_proposto > salario_atual):
+- fator_utilizado: junior=0.5, pleno=1.0, senior=1.5, especialista/lideranca=2.0 (use nivel_senioridade; se ausente, use 1.0)
+- custo_turnover_estimado: salario_proposto * 12 * fator_utilizado
+- custo_aumento_anual: (salario_proposto - salario_atual) * 12 (se salario_atual = 0, use salario_proposto * 0.1)
+- roi_multiplicador: custo_turnover_estimado / custo_aumento_anual, arredondado para 1 decimal
+- interpretacao: frase curta explicando o ROI no contexto do cargo, ex: "Reter este Senior custa R$ 14.400/ano. Substituí-lo custaria R$ 126.000. ROI de aprovar: 8,7x."
+- Se tipo = "ajuste_faixa" ou salario_proposto <= salario_atual, omita este campo completamente
+
+"script_comunicacao": {
+  "aprovacao": "string",
+  "aprovacao_parcial": "string",
+  "negativa": "string"
+}
+Instruções para script_comunicacao:
+- Gere 3 scripts prontos para o gestor usar na conversa com o colaborador, personalizados com cargo, valores reais e contexto
+- Cada script: 2-3 parágrafos, tom profissional e humano, em português
+- aprovacao: script para quando a decisão foi aprovada — confirme o novo salário, reconheça a contribuição, mostre o próximo passo
+- aprovacao_parcial: script para aprovação com ressalvas — seja honesto sobre o limite, explique o critério, ofereça um prazo ou marco futuro
+- negativa: script para quando não foi aprovado — explique sem jargões, preserve o relacionamento, deixe porta aberta com condição clara`
 
 // Modelos Groq em ordem de preferência
 const GROQ_MODELS = [
@@ -71,7 +100,7 @@ async function chamarGroq(apiKey: string, dados: string): Promise<{ texto: strin
           { role: 'user', content: `Analise esta simulação de remuneração:\n\n${dados}` },
         ],
         temperature: 0.2,
-        max_tokens: 2048,
+        max_tokens: 4096,
       }),
     })
 
@@ -159,7 +188,7 @@ serve(async req => {
         nivel_senioridade: formulario.nivel_senioridade || null,
         tempo_cargo: formulario.tempo_cargo ?? null,
         status: 'processando',
-        prompt_version: '7.0',
+        prompt_version: '8.0',
       })
       .select('id')
       .single()

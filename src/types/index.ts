@@ -107,6 +107,20 @@ export interface TotalRewards {
   posicao_faixa: 'abaixo' | 'dentro' | 'acima'
 }
 
+export interface ScriptComunicacao {
+  aprovacao: string
+  aprovacao_parcial: string
+  negativa: string
+}
+
+export interface RoiRetencao {
+  custo_turnover_estimado: number   // R$ — custo estimado de perder o colaborador
+  custo_aumento_anual: number       // R$ — custo incremental anual do aumento
+  roi_multiplicador: number         // custo_turnover / custo_aumento_anual
+  fator_utilizado: number           // ex: 1.5 = 1,5x salário anual
+  interpretacao: string             // frase explicativa em português
+}
+
 export interface ResultadoSimulacao {
   tabela_financeira: TabelaFinanceiraItem[]
   benchmark_mercado: BenchmarkMercado
@@ -115,6 +129,8 @@ export interface ResultadoSimulacao {
   recomendacao: Recomendacao
   conclusao: string
   total_rewards?: TotalRewards
+  script_comunicacao?: ScriptComunicacao
+  roi_retencao?: RoiRetencao
 }
 
 // ---- Simulação (tabela: public.simulacoes) ----

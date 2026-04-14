@@ -11,6 +11,8 @@ import TabelaRiscos from '../components/resultado/TabelaRiscos'
 import RecomendacaoCard from '../components/resultado/RecomendacaoCard'
 import ConclusaoCard from '../components/resultado/ConclusaoCard'
 import TotalRewardsCard from '../components/resultado/TotalRewardsCard'
+import RoiRetencaoCard from '../components/resultado/RoiRetencaoCard'
+import ScriptComunicacaoCard from '../components/resultado/ScriptComunicacaoCard'
 import Spinner from '../components/ui/Spinner'
 import type { Simulacao } from '../types'
 
@@ -102,6 +104,17 @@ export default function Resultado() {
 
       {r?.total_rewards && r.total_rewards.salario_base > 0 && (
         <TotalRewardsCard totalRewards={r.total_rewards} />
+      )}
+
+      {r?.roi_retencao && (
+        <RoiRetencaoCard roi={r.roi_retencao} />
+      )}
+
+      {r?.script_comunicacao && r?.recomendacao && (
+        <ScriptComunicacaoCard
+          script={r.script_comunicacao}
+          decisao={r.recomendacao.decisao}
+        />
       )}
 
       {r?.conclusao && (
