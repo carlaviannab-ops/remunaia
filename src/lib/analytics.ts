@@ -1,17 +1,18 @@
 import posthog from 'posthog-js'
 
 const key = import.meta.env.VITE_POSTHOG_KEY
+const keyValida = key && key.startsWith('phc_') && key.length > 20 && key !== 'phc_SUA_CHAVE_POSTHOG'
 
 export const initAnalytics = () => {
-  if (key) posthog.init(key, { api_host: 'https://app.posthog.com' })
+  if (keyValida) posthog.init(key, { api_host: 'https://app.posthog.com' })
 }
 
 export const track = (evento: string, props?: Record<string, unknown>) => {
-  if (key) posthog.capture(evento, props)
+  if (keyValida) posthog.capture(evento, props)
 }
 
 export const identify = (userId: string, props?: Record<string, unknown>) => {
-  if (key) posthog.identify(userId, props)
+  if (keyValida) posthog.identify(userId, props)
 }
 
 export const eventos = {
