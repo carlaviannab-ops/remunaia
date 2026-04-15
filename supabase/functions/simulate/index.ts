@@ -173,27 +173,38 @@ const GROQ_MODELS = [
   'gemma2-9b-it',
 ]
 
+// Modelos que suportam response_format json_object
+const JSON_MODE_MODELS = new Set(['llama-3.3-70b-versatile', 'llama-3.1-8b-instant'])
+
 async function chamarGroq(apiKey: string, dados: string): Promise<{ texto: string; modelo: string }> {
   for (const model of GROQ_MODELS) {
     console.log(`Tentando Groq: ${model}`)
+
+    const body: Record<string, unknown> = {
+      model,
+      messages: [
+        { role: 'system', content: PROMPT_SISTEMA },
+        { role: 'user', content: `Analise esta simulação de remuneração:\n\n${dados}` },
+      ],
+      temperature: 0.2,
+      max_tokens: 8000,
+    }
+
+    // força JSON válido nos modelos que suportam
+    if (JSON_MODE_MODELS.has(model)) {
+      body.response_format = { type: 'json_object' }
+    }
+
     const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`,
       },
-      body: JSON.stringify({
-        model,
-        messages: [
-          { role: 'system', content: PROMPT_SISTEMA },
-          { role: 'user', content: `Analise esta simulação de remuneração:\n\n${dados}` },
-        ],
-        temperature: 0.2,
-        max_tokens: 4096,
-      }),
+      body: JSON.stringify(body),
     })
 
-    const body = await res.text()
+    const resBody = await res.text()
 
     if (res.status === 429) {
       console.log(`${model} com limite de taxa, tentando próximo...`)
@@ -201,12 +212,20 @@ async function chamarGroq(apiKey: string, dados: string): Promise<{ texto: strin
     }
 
     if (!res.ok) {
-      throw new Error(`Groq ${res.status} (${model}): ${body.slice(0, 300)}`)
+      console.error(`Groq ${res.status} (${model}): ${resBody.slice(0, 300)}`)
+      continue
     }
 
-    const json = JSON.parse(body)
+    const json = JSON.parse(resBody)
     const texto = json.choices?.[0]?.message?.content ?? ''
-    console.log(`Sucesso com Groq: ${model}`)
+    const finishReason = json.choices?.[0]?.finish_reason ?? ''
+
+    if (finishReason === 'length') {
+      console.warn(`${model} truncou a resposta (finish_reason=length), tentando próximo...`)
+      continue
+    }
+
+    console.log(`Sucesso com Groq: ${model}, finish_reason: ${finishReason}`)
     return { texto, modelo: model }
   }
 
@@ -298,8 +317,11 @@ serve(async req => {
       const { texto, modelo } = await chamarGroq(groqKey, JSON.stringify(formulario, null, 2))
       console.log(`Modelo usado: ${modelo}`)
 
-      const jsonMatch = texto.match(/\{[\s\S]*\}/)
-      if (!jsonMatch) throw new Error(`JSON não encontrado. Preview: ${texto.slice(0, 200)}`)
+      // Remove markdown code fences se existirem
+      const textoLimpo = texto.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim()
+      // Extrai o bloco JSON mais externo
+      const jsonMatch = textoLimpo.match(/\{[\s\S]*\}/)
+      if (!jsonMatch) throw new Error(`JSON não encontrado. Preview: ${textoLimpo.slice(0, 200)}`)
       resultado = JSON.parse(jsonMatch[0])
     } catch (e: any) {
       const erroMsg = e.message ?? 'Erro desconhecido'
