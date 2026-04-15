@@ -4,6 +4,8 @@ import { useAuth } from './hooks/useAuth'
 // Pages
 import Landing from './pages/Landing'
 import Login from './pages/Login'
+import Termos from './pages/Termos'
+import Privacidade from './pages/Privacidade'
 import Dashboard from './pages/Dashboard'
 import NovaSimulacao from './pages/NovaSimulacao'
 import Resultado from './pages/Resultado'
@@ -26,9 +28,11 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 const router = createBrowserRouter([
-  { path: '/',         element: <Landing /> },
-  { path: '/login',    element: <Login /> },
-  { path: '/cadastro', element: <Login modo="cadastro" /> },
+  { path: '/',            element: <Landing /> },
+  { path: '/login',       element: <Login /> },
+  { path: '/cadastro',    element: <Login modo="cadastro" /> },
+  { path: '/termos',      element: <Termos /> },
+  { path: '/privacidade', element: <Privacidade /> },
   {
     path: '/',
     element: <ProtectedRoute><Layout /></ProtectedRoute>,

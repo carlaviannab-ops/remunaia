@@ -10,18 +10,31 @@ interface Props {
 
 export default function Login({ modo = 'login' }: Props) {
   const [isCadastro, setIsCadastro] = useState(modo === 'cadastro')
+  const [isRecuperacao, setIsRecuperacao] = useState(false)
   const [nome, setNome] = useState('')
   const [empresa, setEmpresa] = useState('')
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
   const [erro, setErro] = useState('')
+  const [sucesso, setSucesso] = useState('')
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setErro('')
+    setSucesso('')
     setLoading(true)
+
+    if (isRecuperacao) {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/conta`,
+      })
+      setLoading(false)
+      if (error) { setErro('Não foi possível enviar o e-mail. Tente novamente.'); return }
+      setSucesso('E-mail de recuperação enviado! Verifique sua caixa de entrada.')
+      return
+    }
 
     if (isCadastro) {
       const { error } = await supabase.auth.signUp({
@@ -41,11 +54,42 @@ export default function Login({ modo = 'login' }: Props) {
     setLoading(false)
   }
 
-  const handleGoogle = async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: `${import.meta.env.VITE_APP_URL}/dashboard` }
-    })
+  if (isRecuperacao) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="card p-8 w-full max-w-md">
+          <div className="text-center mb-8">
+            <h1 className="text-2xl font-bold text-primary-700">RemunaIA</h1>
+            <p className="text-gray-500 text-sm mt-1">Recuperar senha</p>
+          </div>
+
+          {sucesso ? (
+            <div className="text-center space-y-4">
+              <p className="text-green-700 bg-green-50 rounded-lg px-4 py-3 text-sm">{sucesso}</p>
+              <button onClick={() => { setIsRecuperacao(false); setSucesso('') }} className="text-primary-600 text-sm hover:underline">
+                Voltar para o login
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <p className="text-sm text-gray-500">Informe seu e-mail cadastrado e enviaremos um link para redefinir sua senha.</p>
+              <div>
+                <label className="label">E-mail</label>
+                <input className="input" type="email" value={email} onChange={e => setEmail(e.target.value)} required />
+              </div>
+              {erro && <p className="text-red-600 text-sm">{erro}</p>}
+              <button type="submit" disabled={loading} className="btn-primary w-full flex items-center justify-center gap-2">
+                {loading && <Spinner tamanho="sm" />}
+                Enviar link de recuperação
+              </button>
+              <button type="button" onClick={() => setIsRecuperacao(false)} className="w-full text-sm text-gray-500 hover:text-gray-700">
+                Voltar para o login
+              </button>
+            </form>
+          )}
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -82,6 +126,14 @@ export default function Login({ modo = 'login' }: Props) {
             <input className="input" type="password" minLength={8} value={senha} onChange={e => setSenha(e.target.value)} required />
           </div>
 
+          {!isCadastro && (
+            <div className="text-right -mt-1">
+              <button type="button" onClick={() => setIsRecuperacao(true)} className="text-xs text-primary-600 hover:underline">
+                Esqueci minha senha
+              </button>
+            </div>
+          )}
+
           {erro && <p className="text-red-600 text-sm">{erro}</p>}
 
           <button type="submit" disabled={loading} className="btn-primary w-full flex items-center justify-center gap-2">
@@ -89,18 +141,6 @@ export default function Login({ modo = 'login' }: Props) {
             {isCadastro ? 'Criar conta gratuita' : 'Entrar'}
           </button>
         </form>
-
-        {/* Divisor */}
-        <div className="relative my-4">
-          <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200" /></div>
-          <div className="relative flex justify-center"><span className="bg-white px-2 text-sm text-gray-400">ou</span></div>
-        </div>
-
-        {/* Google */}
-        <button onClick={handleGoogle} className="btn-secondary w-full flex items-center justify-center gap-2">
-          <img src="https://www.google.com/favicon.ico" className="w-4 h-4" alt="Google" />
-          {isCadastro ? 'Cadastrar com Google' : 'Entrar com Google'}
-        </button>
 
         {/* Troca modo */}
         <p className="text-center text-sm text-gray-500 mt-6">
