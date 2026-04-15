@@ -36,7 +36,7 @@ export default function TotalRewardsCard({ totalRewards: tr }: Props) {
     <div className="card p-5">
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-semibold text-gray-900">Total Rewards — Pacote Completo</h3>
-        <CompaRatioBadge ratio={tr.compa_ratio} />
+        {tr.compa_ratio != null && <CompaRatioBadge ratio={tr.compa_ratio} />}
       </div>
 
       {/* Componentes mensais */}

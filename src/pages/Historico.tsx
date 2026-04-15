@@ -182,7 +182,7 @@ export default function Historico() {
                         {labelTipo[sim.tipo]} · {formatarData(sim.criado_em)}
                         {sim.resultado?.total_rewards?.compa_ratio != null && (
                           <span className="ml-2 font-medium text-gray-600">
-                            CR: {sim.resultado.total_rewards.compa_ratio.toFixed(1)}%
+                            CR: {Number(sim.resultado.total_rewards.compa_ratio).toFixed(1)}%
                           </span>
                         )}
                       </p>
