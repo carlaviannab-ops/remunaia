@@ -176,60 +176,86 @@ const GROQ_MODELS = [
 // Modelos que suportam response_format json_object
 const JSON_MODE_MODELS = new Set(['llama-3.3-70b-versatile', 'llama-3.1-8b-instant'])
 
+const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
+
 async function chamarGroq(apiKey: string, dados: string): Promise<{ texto: string; modelo: string }> {
-  for (const model of GROQ_MODELS) {
-    console.log(`Tentando Groq: ${model}`)
+  // Tenta todos os modelos até 3 ciclos completos com espera entre ciclos
+  const MAX_CICLOS = 3
+  const ESPERA_ENTRE_CICLOS_MS = [2000, 5000] // espera após ciclo 1 e 2
 
-    const body: Record<string, unknown> = {
-      model,
-      messages: [
-        { role: 'system', content: PROMPT_SISTEMA },
-        { role: 'user', content: `Analise esta simulação de remuneração:\n\n${dados}` },
-      ],
-      temperature: 0.2,
-      max_tokens: 8000,
+  for (let ciclo = 0; ciclo < MAX_CICLOS; ciclo++) {
+    if (ciclo > 0) {
+      const espera = ESPERA_ENTRE_CICLOS_MS[ciclo - 1] ?? 5000
+      console.log(`Ciclo ${ciclo + 1}: aguardando ${espera}ms antes de tentar novamente...`)
+      await sleep(espera)
     }
 
-    // força JSON válido nos modelos que suportam
-    if (JSON_MODE_MODELS.has(model)) {
-      body.response_format = { type: 'json_object' }
+    for (const model of GROQ_MODELS) {
+      console.log(`Ciclo ${ciclo + 1} — Tentando Groq: ${model}`)
+
+      const body: Record<string, unknown> = {
+        model,
+        messages: [
+          { role: 'system', content: PROMPT_SISTEMA },
+          { role: 'user', content: `Analise esta simulação de remuneração:\n\n${dados}` },
+        ],
+        temperature: 0.2,
+        max_tokens: 8000,
+      }
+
+      // força JSON válido nos modelos que suportam
+      if (JSON_MODE_MODELS.has(model)) {
+        body.response_format = { type: 'json_object' }
+      }
+
+      try {
+        const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify(body),
+        })
+
+        const resBody = await res.text()
+
+        if (res.status === 429) {
+          console.log(`${model} rate limited (429), tentando próximo...`)
+          continue
+        }
+
+        if (!res.ok) {
+          console.error(`Groq ${res.status} (${model}): ${resBody.slice(0, 300)}`)
+          continue
+        }
+
+        const json = JSON.parse(resBody)
+        const texto = json.choices?.[0]?.message?.content ?? ''
+        const finishReason = json.choices?.[0]?.finish_reason ?? ''
+
+        if (finishReason === 'length') {
+          console.warn(`${model} truncou (finish_reason=length), tentando próximo...`)
+          continue
+        }
+
+        if (!texto || texto.trim().length < 10) {
+          console.warn(`${model} retornou resposta vazia, tentando próximo...`)
+          continue
+        }
+
+        console.log(`Sucesso: ${model} (ciclo ${ciclo + 1}, finish_reason: ${finishReason})`)
+        return { texto, modelo: model }
+      } catch (fetchErr: any) {
+        console.error(`Erro de rede (${model}): ${fetchErr.message}`)
+        continue
+      }
     }
 
-    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify(body),
-    })
-
-    const resBody = await res.text()
-
-    if (res.status === 429) {
-      console.log(`${model} com limite de taxa, tentando próximo...`)
-      continue
-    }
-
-    if (!res.ok) {
-      console.error(`Groq ${res.status} (${model}): ${resBody.slice(0, 300)}`)
-      continue
-    }
-
-    const json = JSON.parse(resBody)
-    const texto = json.choices?.[0]?.message?.content ?? ''
-    const finishReason = json.choices?.[0]?.finish_reason ?? ''
-
-    if (finishReason === 'length') {
-      console.warn(`${model} truncou a resposta (finish_reason=length), tentando próximo...`)
-      continue
-    }
-
-    console.log(`Sucesso com Groq: ${model}, finish_reason: ${finishReason}`)
-    return { texto, modelo: model }
+    console.warn(`Ciclo ${ciclo + 1} completo sem sucesso, todos os modelos falharam.`)
   }
 
-  throw new Error('todos_modelos_groq_indisponiveis')
+  throw new Error('todos_modelos_groq_indisponiveis_apos_3_ciclos')
 }
 
 serve(async req => {

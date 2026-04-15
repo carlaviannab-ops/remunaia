@@ -69,7 +69,7 @@ export default function NovaSimulacao() {
       estado: dados.estado,
     })
   }
-  const { simular, loading, erro } = useSimulacao()
+  const { simular, loading, erro, tentativa } = useSimulacao()
 
   function atualizarCampo(campo: keyof FormularioSimulacao, valor: string | number | boolean) {
     setDados(prev => ({ ...prev, [campo]: valor }))
@@ -108,6 +108,12 @@ export default function NovaSimulacao() {
             onVoltar={() => setPasso(2)}
             loading={loading}
           />
+        )}
+
+        {loading && tentativa > 0 && (
+          <p className="mt-4 text-sm text-yellow-700 bg-yellow-50 rounded-lg px-4 py-3">
+            Aguardando disponibilidade da IA... tentativa {tentativa + 1} de 3
+          </p>
         )}
 
         {erro && (
