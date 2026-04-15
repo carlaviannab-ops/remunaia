@@ -25,6 +25,8 @@ export default function Resultado() {
   const [simulacao, setSimulacao] = useState<Simulacao | null>(null)
   const [loading, setLoading] = useState(true)
   const [exportando, setExportando] = useState(false)
+  const [confirmandoExclusao, setConfirmandoExclusao] = useState(false)
+  const [excluindo, setExcluindo] = useState(false)
 
   useEffect(() => {
     if (!id) return
@@ -39,6 +41,13 @@ export default function Resultado() {
         if (data) track(eventos.RESULTADO_VISTO, { tipo: data.tipo })
       })
   }, [id])
+
+  async function handleExcluir() {
+    if (!simulacao) return
+    setExcluindo(true)
+    await supabase.from('simulacoes').delete().eq('id', simulacao.id)
+    navigate('/historico')
+  }
 
   async function handleExportarPDF() {
     if (!simulacao) return
@@ -75,7 +84,21 @@ export default function Resultado() {
           ← Voltar
         </button>
         <h1 className="text-xl font-bold text-gray-900">Resultado da Simulação</h1>
-        <div />
+        {confirmandoExclusao ? (
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-gray-500">Excluir?</span>
+            <button onClick={handleExcluir} disabled={excluindo} className="text-red-600 font-medium hover:underline">
+              {excluindo ? '...' : 'Sim'}
+            </button>
+            <button onClick={() => setConfirmandoExclusao(false)} className="text-gray-400 hover:text-gray-700">
+              Não
+            </button>
+          </div>
+        ) : (
+          <button onClick={() => setConfirmandoExclusao(true)} className="text-gray-300 hover:text-red-400 transition-colors text-sm" title="Excluir simulação">
+            🗑 Excluir
+          </button>
+        )}
       </div>
 
       <ResumoScenario simulacao={simulacao} />

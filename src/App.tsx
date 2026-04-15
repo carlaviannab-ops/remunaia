@@ -14,6 +14,7 @@ import SimulacaoDetalhe from './pages/SimulacaoDetalhe'
 import Planos from './pages/Planos'
 import Conta from './pages/Conta'
 import Admin from './pages/Admin'
+import SimulacaoMassa from './pages/SimulacaoMassa'
 
 // Layout
 import Layout from './components/layout/Layout'
@@ -45,6 +46,7 @@ const router = createBrowserRouter([
       { path: 'planos',                      element: <Planos /> },
       { path: 'conta',                       element: <Conta /> },
       { path: 'admin',                       element: <Admin /> },
+      { path: 'simulacao/massa',             element: <SimulacaoMassa /> },
     ]
   }
 ])

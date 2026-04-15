@@ -68,6 +68,8 @@ export default function Historico() {
   const [busca, setBusca] = useState('')
   const [selecionadas, setSelecionadas] = useState<string[]>([])
   const [comparando, setComparando] = useState(false)
+  const [excluindo, setExcluindo] = useState<string | null>(null)
+  const [confirmandoId, setConfirmandoId] = useState<string | null>(null)
 
   useEffect(() => {
     supabase
@@ -79,6 +81,15 @@ export default function Historico() {
         setLoading(false)
       })
   }, [])
+
+  async function excluirSimulacao(id: string) {
+    setExcluindo(id)
+    await supabase.from('simulacoes').delete().eq('id', id)
+    setSimulacoes(prev => prev.filter(s => s.id !== id))
+    setSelecionadas(prev => prev.filter(x => x !== id))
+    setConfirmandoId(null)
+    setExcluindo(null)
+  }
 
   const filtradas = simulacoes.filter(s => {
     const termo = busca.toLowerCase()
@@ -104,9 +115,14 @@ export default function Historico() {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Histórico de Simulações</h1>
-        <button onClick={() => navigate('/simulacao/nova')} className="btn-primary">
-          ➕ Nova Simulação
-        </button>
+        <div className="flex gap-2">
+          <button onClick={() => navigate('/simulacao/massa')} className="btn-secondary text-sm">
+            📋 Simulação em Massa
+          </button>
+          <button onClick={() => navigate('/simulacao/nova')} className="btn-primary">
+            ➕ Nova Simulação
+          </button>
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
@@ -172,7 +188,7 @@ export default function Historico() {
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
                     <Badge nivel={risco as any} />
                     <button
                       onClick={e => { e.stopPropagation(); toggleSelecionada(sim.id) }}
@@ -180,6 +196,31 @@ export default function Historico() {
                     >
                       {isSelected ? '✓' : ''}
                     </button>
+                    {confirmandoId === sim.id ? (
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={e => { e.stopPropagation(); excluirSimulacao(sim.id) }}
+                          disabled={excluindo === sim.id}
+                          className="text-xs text-red-600 font-medium hover:underline"
+                        >
+                          {excluindo === sim.id ? '...' : 'Confirmar'}
+                        </button>
+                        <button
+                          onClick={e => { e.stopPropagation(); setConfirmandoId(null) }}
+                          className="text-xs text-gray-400 hover:text-gray-700"
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={e => { e.stopPropagation(); setConfirmandoId(sim.id) }}
+                        className="text-gray-300 hover:text-red-400 transition-colors text-sm"
+                        title="Excluir simulação"
+                      >
+                        🗑
+                      </button>
+                    )}
                     <span className="text-gray-300">›</span>
                   </div>
                 </div>
