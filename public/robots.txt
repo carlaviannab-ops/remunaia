@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /simulacao
+Disallow: /historico
+Disallow: /conta
+Disallow: /admin
+
+Sitemap: https://remunaia.netlify.app/sitemap.xml
