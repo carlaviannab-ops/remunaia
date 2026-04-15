@@ -3,8 +3,10 @@ export const formatarMoeda = (valor: number): string =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor)
 
 // Formatar percentual
-export const formatarPorcentagem = (valor: number): string =>
-  `${valor > 0 ? '+' : ''}${valor.toFixed(1)}%`
+export const formatarPorcentagem = (valor: number | null | undefined): string => {
+  if (valor == null) return '—'
+  return `${valor > 0 ? '+' : ''}${valor.toFixed(1)}%`
+}
 
 // Formatar data
 export const formatarData = (iso: string): string =>

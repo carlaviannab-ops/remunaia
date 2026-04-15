@@ -27,7 +27,7 @@ export default function RoiRetencaoCard({ roi }: Props) {
           <h3 className="font-semibold text-gray-900">ROI de Retenção</h3>
           <p className="text-xs text-gray-400 mt-0.5">Custo do aumento vs. custo de perder o colaborador</p>
         </div>
-        <RoiBadge valor={roi.roi_multiplicador} />
+        {roi.roi_multiplicador != null && <RoiBadge valor={roi.roi_multiplicador} />}
       </div>
 
       <div className="grid grid-cols-2 gap-3 mb-4">

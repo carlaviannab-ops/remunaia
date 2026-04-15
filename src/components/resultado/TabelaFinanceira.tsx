@@ -35,10 +35,9 @@ export default function TabelaFinanceira({ itens }: Props) {
                 <td className="px-5 py-3 text-right">
                   <span
                     className={`font-medium ${
-                      item.variacao_percentual >= 0 ? 'text-green-600' : 'text-red-600'
+                      (item.variacao_percentual ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'
                     }`}
                   >
-                    {item.variacao_percentual >= 0 ? '+' : ''}
                     {formatarPorcentagem(item.variacao_percentual)}
                   </span>
                 </td>
