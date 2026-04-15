@@ -16,11 +16,7 @@ Analise a simulação e retorne APENAS JSON válido (sem markdown, sem texto ext
 
 Estrutura obrigatória:
 {
-  "tabela_financeira": [
-    { "componente": "Salário Base", "valor_atual": number, "valor_proposto": number, "variacao_percentual": number, "custo_total_empresa": number },
-    { "componente": "Encargos (CLT ~70%)", "valor_atual": number, "valor_proposto": number, "variacao_percentual": number, "custo_total_empresa": number },
-    { "componente": "Custo Total Mensal", "valor_atual": number, "valor_proposto": number, "variacao_percentual": number, "custo_total_empresa": number }
-  ],
+  "tabela_financeira": [],
   "benchmark_mercado": { "p25": number, "p50": number, "p75": number, "fonte": "Mercer TRS / WTW / CAGED — estimativa baseada em fontes de mercado 2024" },
   "equidade_interna": { "status": "adequado", "posicao_relativa": "string", "minimo_grupo": number, "mediana_grupo": number, "maximo_grupo": number, "observacao": "string" },
   "riscos": [{ "nivel": "baixo", "descricao": "string", "mitigacao": "string" }],
@@ -38,6 +34,17 @@ Estrutura obrigatória:
     "posicao_faixa": "abaixo"
   }
 }
+
+Instruções para tabela_financeira (depende do regime):
+- Se regime = "clt": retorne 3 linhas — "Salário Base", "Encargos CLT (~70%)", "Custo Total Mensal"
+  * custo_total_empresa Salário Base = valor_proposto * 1.70
+  * custo_total_empresa Encargos = valor_proposto * 0.70
+  * custo_total_empresa Custo Total = valor_proposto * 1.70
+  * variacao_percentual = ((valor_proposto - valor_atual) / valor_atual) * 100
+- Se regime = "pj": retorne apenas 2 linhas — "Honorários PJ" e "Custo Total Mensal". NÃO inclua linha de encargos.
+  * custo_total_empresa Honorários PJ = valor_proposto (sem encargos trabalhistas)
+  * custo_total_empresa Custo Total = valor_proposto
+  * Motivo: contrato PJ não gera FGTS, INSS patronal, 13º salário nem férias para a empresa
 
 Instruções para total_rewards (use o salário PROPOSTO):
 - salario_base: salário_proposto informado
@@ -270,7 +277,7 @@ serve(async req => {
         nivel_senioridade: formulario.nivel_senioridade || null,
         tempo_cargo: formulario.tempo_cargo ?? null,
         status: 'processando',
-        prompt_version: '11.0',
+        prompt_version: '11.1',
       })
       .select('id')
       .single()
