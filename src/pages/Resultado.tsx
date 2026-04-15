@@ -14,6 +14,8 @@ import TotalRewardsCard from '../components/resultado/TotalRewardsCard'
 import RoiRetencaoCard from '../components/resultado/RoiRetencaoCard'
 import ScriptComunicacaoCard from '../components/resultado/ScriptComunicacaoCard'
 import FontesPesquisaCard from '../components/resultado/FontesPesquisaCard'
+import FlightRiskCard from '../components/resultado/FlightRiskCard'
+import RoadmapSalarialCard from '../components/resultado/RoadmapSalarialCard'
 import Spinner from '../components/ui/Spinner'
 import type { Simulacao } from '../types'
 
@@ -113,6 +115,14 @@ export default function Resultado() {
 
       {r?.roi_retencao && (
         <RoiRetencaoCard roi={r.roi_retencao} />
+      )}
+
+      {r?.flight_risk && (
+        <FlightRiskCard flightRisk={r.flight_risk} />
+      )}
+
+      {r?.roadmap_salarial && (
+        <RoadmapSalarialCard roadmap={r.roadmap_salarial} />
       )}
 
       {r?.script_comunicacao && r?.recomendacao && (

@@ -77,6 +77,50 @@ Instruções para script_comunicacao:
 - aprovacao_parcial: script para aprovação com ressalvas — seja honesto sobre o limite, explique o critério, ofereça um prazo ou marco futuro
 - negativa: script para quando não foi aprovado — explique sem jargões, preserve o relacionamento, deixe porta aberta com condição clara
 
+Adicione também:
+
+"flight_risk": {
+  "score": number,
+  "nivel": "baixo" | "moderado" | "alto" | "critico",
+  "fatores": {
+    "gap_salarial": "string",
+    "tempo_cargo": "string",
+    "senioridade": "string",
+    "demanda_mercado": "string"
+  },
+  "resumo": "string"
+}
+Instruções para flight_risk (omita apenas se tipo = "ajuste_faixa"):
+- Calcule score de 0 a 100 combinando os 4 fatores abaixo:
+  * gap_salarial (peso 40%): compa_ratio < 80 → 40pts | 80-89 → 25pts | 90-99 → 10pts | >=100 → 0pts
+  * tempo_cargo (peso 25%): >3 anos sem reajuste → 25pts | 1-3 anos → 15pts | <1 ano → 5pts | não informado → 10pts
+  * senioridade (peso 20%): lideranca/especialista → 20pts | senior → 15pts | pleno → 8pts | junior → 3pts | não informado → 8pts
+  * demanda_mercado (peso 15%): setor muito aquecido (TI, dados, saúde, financeiro) → 15pts | moderado → 8pts | estável → 3pts
+- nivel: score 0-30 → "baixo" | 31-60 → "moderado" | 61-80 → "alto" | 81-100 → "critico"
+- Preencha cada fator com frase descritiva de 5-10 palavras explicando a pontuação
+- resumo: diagnóstico claro em 1-2 frases, mencione o principal risco
+
+"roadmap_salarial": {
+  "objetivo": "string",
+  "etapas": [
+    { "numero": 1, "prazo": "string", "data_alvo": "string", "salario_alvo": number, "percentual_aumento": number, "condicao": "string", "descricao": "string" },
+    { "numero": 2, "prazo": "string", "data_alvo": "string", "salario_alvo": number, "percentual_aumento": number, "condicao": "string", "descricao": "string" },
+    { "numero": 3, "prazo": "string", "data_alvo": "string", "salario_alvo": number, "percentual_aumento": number, "condicao": "string", "descricao": "string" }
+  ],
+  "salario_final": number,
+  "observacao": "string"
+}
+Instruções para roadmap_salarial:
+- Gere APENAS quando: decisao = "aguardar" OU "aprovado_com_ressalvas" OU "reprovado" OU compa_ratio < 90
+- Objetivo: frase descrevendo a meta final (ex: "Atingir P50 de mercado e reconhecer contribuição em até 12 meses")
+- Etapa 1 (prazo 30-90 dias): ação imediata ou reconhecimento parcial — salario_alvo entre salario_atual e salario_proposto
+- Etapa 2 (prazo 6 meses): revisão formal atrelada a resultado — salario_alvo mais próximo do proposto
+- Etapa 3 (prazo 12-18 meses): alinhamento completo ao mercado ou promoção — salario_alvo = salario_proposto ou acima
+- data_alvo: mês/ano calculado a partir de abril/2025 (ex: "Julho/2025", "Outubro/2025", "Abril/2026")
+- condicao: critério claro e mensurável para liberar cada etapa
+- percentual_aumento: aumento relativo ao salário da etapa anterior
+- Se decisao = "aprovado" E compa_ratio >= 90, omita roadmap_salarial completamente
+
 OBRIGATÓRIO: inclua sempre o campo "fontes_pesquisa" na raiz do JSON:
 "fontes_pesquisa": [
   {
@@ -223,7 +267,7 @@ serve(async req => {
         nivel_senioridade: formulario.nivel_senioridade || null,
         tempo_cargo: formulario.tempo_cargo ?? null,
         status: 'processando',
-        prompt_version: '9.0',
+        prompt_version: '10.0',
       })
       .select('id')
       .single()

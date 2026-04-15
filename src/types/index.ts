@@ -107,6 +107,35 @@ export interface TotalRewards {
   posicao_faixa: 'abaixo' | 'dentro' | 'acima'
 }
 
+export interface FlightRisk {
+  score: number                   // 0–100
+  nivel: 'baixo' | 'moderado' | 'alto' | 'critico'
+  fatores: {
+    gap_salarial: string          // ex: "18% abaixo do P50"
+    tempo_cargo: string           // ex: "2 anos sem reajuste"
+    senioridade: string           // ex: "Perfil sênior com alta demanda"
+    demanda_mercado: string       // ex: "Setor de TI aquecido em SP"
+  }
+  resumo: string                  // frase de 1-2 linhas com o diagnóstico
+}
+
+export interface EtapaRoadmap {
+  numero: number
+  prazo: string                   // "90 dias"
+  data_alvo: string               // "Agosto/2025"
+  salario_alvo: number
+  percentual_aumento: number
+  condicao: string                // critério para liberar este passo
+  descricao: string               // o que acontece nesta etapa
+}
+
+export interface RoadmapSalarial {
+  objetivo: string                // "Atingir P50 de mercado em 12 meses"
+  etapas: EtapaRoadmap[]
+  salario_final: number
+  observacao?: string
+}
+
 export type TipoFonte =
   | 'pesquisa_salarial'
   | 'dados_governamentais'
@@ -149,6 +178,8 @@ export interface ResultadoSimulacao {
   script_comunicacao?: ScriptComunicacao
   roi_retencao?: RoiRetencao
   fontes_pesquisa?: FontePesquisa[]
+  flight_risk?: FlightRisk
+  roadmap_salarial?: RoadmapSalarial
 }
 
 // ---- Simulação (tabela: public.simulacoes) ----
