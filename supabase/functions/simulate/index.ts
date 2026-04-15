@@ -42,8 +42,8 @@ Estrutura obrigatória:
 Instruções para total_rewards (use o salário PROPOSTO):
 - salario_base: salário_proposto informado
 - vr_mensal, vt_mensal, plano_saude_mensal: use os valores informados no formulário (0 se não informado)
-- plr_anual: salario_base * 12 * (plr_percentual/100). Se não informado, use 0
-- bonus_anual: salario_base * 12 * (bonus_target_percentual/100). Se não informado, use 0
+- plr_anual: salario_base * plr_multiplo. Se não informado, use 0. (plr_multiplo = número de salários, ex: 1.5 = 1,5 salário)
+- bonus_anual: salario_base * bonus_multiplo. Se não informado, use 0. (bonus_multiplo = número de salários, ex: 2 = 2 salários)
 - total_anual: (salario_base + vr_mensal + vt_mensal + plano_saude_mensal) * 12 + plr_anual + bonus_anual
 - compa_ratio: (salario_base / benchmark_mercado.p50) * 100, arredondado para 1 decimal
 - posicao_faixa: "abaixo" se compa_ratio < 90, "dentro" se entre 90 e 110, "acima" se > 110
@@ -92,13 +92,16 @@ Adicione também:
 }
 Instruções para flight_risk (omita apenas se tipo = "ajuste_faixa"):
 - Calcule score de 0 a 100 combinando os 4 fatores abaixo:
-  * gap_salarial (peso 40%): compa_ratio < 80 → 40pts | 80-89 → 25pts | 90-99 → 10pts | >=100 → 0pts
-  * tempo_cargo (peso 25%): >3 anos sem reajuste → 25pts | 1-3 anos → 15pts | <1 ano → 5pts | não informado → 10pts
-  * senioridade (peso 20%): lideranca/especialista → 20pts | senior → 15pts | pleno → 8pts | junior → 3pts | não informado → 8pts
+  * gap_salarial (peso 40%): avalie o compa_ratio DO SALÁRIO PROPOSTO vs P50.
+    compa_ratio < 80 → 40pts | 80-84 → 35pts | 85-89 → 28pts | 90-94 → 15pts | 95-99 → 8pts | >=100 → 0pts
+    ATENÇÃO: se o aumento proposto for menor que 5% e compa_ratio ainda < 90, aplique mínimo de 30pts neste fator.
+  * tempo_cargo (peso 25%): >3 anos sem reajuste → 25pts | 2-3 anos → 18pts | 1-2 anos → 12pts | <1 ano → 5pts | não informado → 10pts
+  * senioridade (peso 20%): lideranca/especialista → 20pts | senior → 15pts | pleno → 10pts | junior → 4pts | não informado → 8pts
   * demanda_mercado (peso 15%): setor muito aquecido (TI, dados, saúde, financeiro) → 15pts | moderado → 8pts | estável → 3pts
-- nivel: score 0-30 → "baixo" | 31-60 → "moderado" | 61-80 → "alto" | 81-100 → "critico"
+- nivel: score 0-25 → "baixo" | 26-50 → "moderado" | 51-75 → "alto" | 76-100 → "critico"
 - Preencha cada fator com frase descritiva de 5-10 palavras explicando a pontuação
 - resumo: diagnóstico claro em 1-2 frases, mencione o principal risco
+- IMPORTANTE: um aumento irrisório (< 5% ou < R$ 500) para cargo Pleno/Sênior/Especialista/Liderança NUNCA deve resultar em score abaixo de 40
 
 "roadmap_salarial": {
   "objetivo": "string",
@@ -141,20 +144,20 @@ Instruções para fontes_pesquisa:
 
 LISTA DE FONTES PERMITIDAS (use exatamente estes dados):
 
-1. { "nome": "Mercer Total Remuneration Survey (TRS) Brasil", "organizacao": "Mercer Brasil", "tipo": "pesquisa_salarial", "cobertura": "Todos os setores — Brasil", "ano_referencia": "2024", "url": "https://www.mercer.com/en/brazil/solutions/talent/remuneration-data-surveys.html" }
-2. { "nome": "Willis Towers Watson — Pesquisa de Remuneração Total", "organizacao": "WTW Brasil", "tipo": "pesquisa_salarial", "cobertura": "Executivos, gestores e especialistas — Brasil", "ano_referencia": "2024", "url": "https://www.wtwco.com/pt-BR/solutions/products/survey-reports-brasil" }
-3. { "nome": "Korn Ferry — Pay Benchmark Brasil", "organizacao": "Korn Ferry", "tipo": "pesquisa_salarial", "cobertura": "Todos os níveis hierárquicos — Brasil", "ano_referencia": "2024", "url": "https://www.kornferry.com/capabilities/total-rewards/pay" }
+1. { "nome": "Mercer Total Remuneration Survey (TRS) Brasil", "organizacao": "Mercer Brasil", "tipo": "pesquisa_salarial", "cobertura": "Todos os setores — Brasil", "ano_referencia": "2024", "url": "https://www.mercer.com/pt-br/" }
+2. { "nome": "Willis Towers Watson — Pesquisa de Remuneração Total", "organizacao": "WTW Brasil", "tipo": "pesquisa_salarial", "cobertura": "Executivos, gestores e especialistas — Brasil", "ano_referencia": "2024", "url": "https://www.wtwco.com/pt-BR" }
+3. { "nome": "Korn Ferry — Pay Benchmark Brasil", "organizacao": "Korn Ferry", "tipo": "pesquisa_salarial", "cobertura": "Todos os níveis hierárquicos — Brasil", "ano_referencia": "2024", "url": "https://www.kornferry.com/br-pt" }
 4. { "nome": "Guia Salarial Robert Half", "organizacao": "Robert Half Brasil", "tipo": "consultoria", "cobertura": "Finanças, TI, RH, Jurídico, Engenharia, Varejo — Brasil", "ano_referencia": "2025", "url": "https://www.roberthalf.com.br/guia-salarial" }
 5. { "nome": "Hays Brasil — Guia Salarial", "organizacao": "Hays Brasil", "tipo": "consultoria", "cobertura": "TI, Engenharia, Financeiro, Logística, Marketing — Brasil", "ano_referencia": "2025", "url": "https://www.hays.com.br/guia-salarial" }
-6. { "nome": "Catho — Pesquisa Salarial", "organizacao": "Catho Online", "tipo": "portal_empregos", "cobertura": "Mais de 500 cargos — Brasil", "ano_referencia": "2024", "url": "https://www.catho.com.br/profissoes" }
-7. { "nome": "Glassdoor Brasil — Salários", "organizacao": "Glassdoor", "tipo": "portal_empregos", "cobertura": "Salários declarados por profissionais — Brasil", "ano_referencia": "2024", "url": "https://www.glassdoor.com.br/Salarios" }
-8. { "nome": "LinkedIn Salary Insights Brasil", "organizacao": "LinkedIn", "tipo": "portal_empregos", "cobertura": "Salários por cargo e região — Brasil", "ano_referencia": "2024", "url": "https://www.linkedin.com/salary" }
+6. { "nome": "Catho — Pesquisa Salarial", "organizacao": "Catho Online", "tipo": "portal_empregos", "cobertura": "Mais de 500 cargos — Brasil", "ano_referencia": "2024", "url": "https://www.catho.com.br/profissoes/" }
+7. { "nome": "Glassdoor Brasil — Salários", "organizacao": "Glassdoor", "tipo": "portal_empregos", "cobertura": "Salários declarados por profissionais — Brasil", "ano_referencia": "2024", "url": "https://www.glassdoor.com.br/Sal%C3%A1rios/index.htm" }
+8. { "nome": "LinkedIn Salary Insights Brasil", "organizacao": "LinkedIn", "tipo": "portal_empregos", "cobertura": "Salários por cargo e região — Brasil", "ano_referencia": "2024", "url": "https://www.linkedin.com/salary/" }
 9. { "nome": "CAGED — Cadastro Geral de Empregados e Desempregados", "organizacao": "Ministério do Trabalho e Emprego (MTE)", "tipo": "dados_governamentais", "cobertura": "Admissões, demissões e salários formais — Brasil", "ano_referencia": "2024", "url": "https://www.gov.br/trabalho-e-emprego/pt-br/assuntos/estatisticas-trabalho/caged" }
 10. { "nome": "RAIS — Relação Anual de Informações Sociais", "organizacao": "Ministério do Trabalho e Emprego (MTE)", "tipo": "dados_governamentais", "cobertura": "Vínculos empregatícios formais e remuneração — Brasil", "ano_referencia": "2023", "url": "https://www.gov.br/trabalho-e-emprego/pt-br/assuntos/estatisticas-trabalho/rais" }
 11. { "nome": "PNAD Contínua — Rendimento de Trabalho", "organizacao": "IBGE", "tipo": "dados_governamentais", "cobertura": "Rendimentos por ocupação, região e escolaridade — Brasil", "ano_referencia": "2024", "url": "https://www.ibge.gov.br/estatisticas/sociais/trabalho/17270-pnad-continua.html" }
-12. { "nome": "Stack Overflow Developer Survey", "organizacao": "Stack Overflow", "tipo": "associacao_setorial", "cobertura": "Salários de desenvolvedores e profissionais de TI — global com recorte Brasil", "ano_referencia": "2024", "url": "https://survey.stackoverflow.co/2024" } — USE APENAS para cargos de TI/tecnologia
-13. { "nome": "Brasscom — Pesquisa de Recursos Humanos em TIC", "organizacao": "Brasscom", "tipo": "associacao_setorial", "cobertura": "Profissionais de tecnologia — Brasil", "ano_referencia": "2024", "url": "https://brasscom.org.br/publicacoes" } — USE APENAS para cargos de TI/tecnologia
-14. { "nome": "DIEESE — Pesquisa de Emprego e Desemprego", "organizacao": "DIEESE", "tipo": "dados_governamentais", "cobertura": "Mercado de trabalho formal e informal — regiões metropolitanas do Brasil", "ano_referencia": "2024", "url": "https://www.dieese.org.br/pesquisaemprego" } — USE para cargos operacionais e de nível técnico`
+12. { "nome": "Stack Overflow Developer Survey", "organizacao": "Stack Overflow", "tipo": "associacao_setorial", "cobertura": "Salários de desenvolvedores e profissionais de TI — global com recorte Brasil", "ano_referencia": "2024", "url": "https://survey.stackoverflow.co/2024/" } — USE APENAS para cargos de TI/tecnologia
+13. { "nome": "Brasscom — Pesquisa de Recursos Humanos em TIC", "organizacao": "Brasscom", "tipo": "associacao_setorial", "cobertura": "Profissionais de tecnologia — Brasil", "ano_referencia": "2024", "url": "https://brasscom.org.br/categoria/publicacoes/" } — USE APENAS para cargos de TI/tecnologia
+14. { "nome": "DIEESE — Pesquisa de Emprego e Desemprego", "organizacao": "DIEESE", "tipo": "dados_governamentais", "cobertura": "Mercado de trabalho formal e informal — regiões metropolitanas do Brasil", "ano_referencia": "2024", "url": "https://www.dieese.org.br/analiseped/resumoHistoricoSP.html" } — USE para cargos operacionais e de nível técnico`
 
 // Modelos Groq em ordem de preferência
 const GROQ_MODELS = [
@@ -267,7 +270,7 @@ serve(async req => {
         nivel_senioridade: formulario.nivel_senioridade || null,
         tempo_cargo: formulario.tempo_cargo ?? null,
         status: 'processando',
-        prompt_version: '10.0',
+        prompt_version: '11.0',
       })
       .select('id')
       .single()

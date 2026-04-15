@@ -48,8 +48,8 @@ export interface FormularioSimulacao {
   vr_mensal?: number
   vt_mensal?: number
   plano_saude_mensal?: number
-  plr_percentual?: number
-  bonus_target_percentual?: number
+  plr_multiplo?: number        // número de salários mensais (ex: 1.5 = 1,5 salário)
+  bonus_multiplo?: number      // número de salários mensais (ex: 2 = 2 salários)
 }
 
 // ---- Resultado JSON (campo resultado JSONB) ----

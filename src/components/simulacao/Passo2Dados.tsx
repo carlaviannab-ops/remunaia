@@ -237,27 +237,29 @@ export default function Passo2Dados({ tipo, dados, onChange, onProximo, onVoltar
               />
             </div>
             <div>
-              <label className="label">PLR — percentual sobre salário anual (%)</label>
+              <label className="label">PLR (número de salários)</label>
               <input
                 className="input"
                 type="number"
                 min={0}
-                max={200}
-                placeholder="Ex: 100 (= 1 salário)"
-                value={dados.plr_percentual ?? ''}
-                onChange={e => onChange('plr_percentual', Number(e.target.value))}
+                max={12}
+                step={0.5}
+                placeholder="Ex: 1.5 = 1,5 salário"
+                value={dados.plr_multiplo ?? ''}
+                onChange={e => onChange('plr_multiplo', Number(e.target.value))}
               />
             </div>
             <div>
-              <label className="label">Bônus target — percentual sobre salário anual (%)</label>
+              <label className="label">Bônus target (número de salários)</label>
               <input
                 className="input"
                 type="number"
                 min={0}
-                max={300}
-                placeholder="Ex: 20"
-                value={dados.bonus_target_percentual ?? ''}
-                onChange={e => onChange('bonus_target_percentual', Number(e.target.value))}
+                max={12}
+                step={0.5}
+                placeholder="Ex: 2 = 2 salários"
+                value={dados.bonus_multiplo ?? ''}
+                onChange={e => onChange('bonus_multiplo', Number(e.target.value))}
               />
             </div>
           </div>
