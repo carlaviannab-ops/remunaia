@@ -7,6 +7,69 @@ import Badge from '../components/ui/Badge'
 import Spinner from '../components/ui/Spinner'
 import type { Simulacao } from '../types'
 
+const LIMITES_PLANO: Record<string, number> = {
+  trial: 3, starter: 20, professional: 999999, enterprise: 999999, cancelado: 0,
+}
+
+function TrialBanner({ usadas, limite, onUpgrade }: { usadas: number; limite: number; onUpgrade: () => void }) {
+  const restantes = Math.max(0, limite - usadas)
+  const pct = Math.min(100, (usadas / limite) * 100)
+  const esgotado = restantes === 0
+  const urgente = restantes <= 1
+
+  return (
+    <div className={`card p-4 border-2 ${esgotado ? 'border-red-300 bg-red-50' : urgente ? 'border-orange-300 bg-orange-50' : 'border-primary-200 bg-primary-50'}`}>
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1">
+          <p className={`text-sm font-semibold ${esgotado ? 'text-red-700' : urgente ? 'text-orange-700' : 'text-primary-700'}`}>
+            {esgotado
+              ? 'Suas simulações gratuitas acabaram'
+              : `${restantes} simulação${restantes !== 1 ? 'ões' : ''} restante${restantes !== 1 ? 's' : ''} no trial`}
+          </p>
+          <p className="text-xs text-gray-500 mt-0.5">
+            {esgotado
+              ? 'Assine um plano para continuar usando o RemunaIA.'
+              : 'Assine o Professional e tenha acesso ilimitado + ROI de Retenção, Flight Risk Score e mais.'}
+          </p>
+          <div className="mt-2 h-1.5 bg-gray-200 rounded-full overflow-hidden w-40">
+            <div
+              className={`h-full rounded-full transition-all ${esgotado ? 'bg-red-500' : urgente ? 'bg-orange-400' : 'bg-primary-500'}`}
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+          <p className="text-xs text-gray-400 mt-1">{usadas} de {limite} utilizadas</p>
+        </div>
+        <button onClick={onUpgrade} className="btn-primary text-xs shrink-0 py-2 px-4">
+          {esgotado ? 'Assinar agora' : 'Ver planos'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function StarterBanner({ usadas, limite, onUpgrade }: { usadas: number; limite: number; onUpgrade: () => void }) {
+  const restantes = Math.max(0, limite - usadas)
+  const pct = Math.min(100, (usadas / limite) * 100)
+  if (restantes > 5) return null
+  return (
+    <div className="card p-4 border border-yellow-200 bg-yellow-50">
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <p className="text-sm font-semibold text-yellow-800">
+            {restantes === 0 ? 'Limite mensal atingido' : `${restantes} simulações restantes este mês`}
+          </p>
+          <div className="mt-1.5 h-1.5 bg-yellow-200 rounded-full overflow-hidden w-32">
+            <div className="h-full bg-yellow-500 rounded-full" style={{ width: `${pct}%` }} />
+          </div>
+        </div>
+        <button onClick={onUpgrade} className="text-xs text-yellow-700 font-semibold underline">
+          Upgrade para ilimitado
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export default function Dashboard() {
   const { profile } = useAuth()
   const navigate = useNavigate()
@@ -30,12 +93,16 @@ export default function Dashboard() {
     return acc + (s.salario_proposto - s.salario_atual) * 12
   }, 0)
 
+  const plano = profile?.plano ?? 'trial'
+  const usadas = profile?.simulacoes_usadas_mes ?? 0
+  const limite = LIMITES_PLANO[plano] ?? 0
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            Olá, {profile?.nome?.split(' ')[0]} 👋
+            Olá, {profile?.nome?.split(' ')[0]}
           </h1>
           <p className="text-gray-500 text-sm mt-1">
             Painel de simulações de remuneração
@@ -45,6 +112,14 @@ export default function Dashboard() {
           <span>➕</span> Nova Simulação
         </button>
       </div>
+
+      {/* Banners de limite */}
+      {plano === 'trial' && (
+        <TrialBanner usadas={usadas} limite={limite} onUpgrade={() => navigate('/planos')} />
+      )}
+      {plano === 'starter' && (
+        <StarterBanner usadas={usadas} limite={limite} onUpgrade={() => navigate('/planos')} />
+      )}
 
       {/* Cards de resumo */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -58,9 +133,7 @@ export default function Dashboard() {
         </div>
         <div className="card p-5">
           <p className="text-sm text-gray-500">Plano atual</p>
-          <p className="text-3xl font-bold text-primary-700 mt-1 capitalize">
-            {profile?.plano ?? 'Trial'}
-          </p>
+          <p className="text-3xl font-bold text-primary-700 mt-1 capitalize">{plano}</p>
         </div>
       </div>
 

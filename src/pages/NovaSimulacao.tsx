@@ -1,15 +1,57 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import WizardProgress from '../components/simulacao/WizardProgress'
 import Passo1Tipo from '../components/simulacao/Passo1Tipo'
 import Passo2Dados from '../components/simulacao/Passo2Dados'
 import Passo3Contexto from '../components/simulacao/Passo3Contexto'
 import { useSimulacao } from '../hooks/useSimulacao'
+import { useAuth } from '../hooks/useAuth'
 import type { FormularioSimulacao, TipoMovimento } from '../types'
+
+const LIMITES_PLANO: Record<string, number> = {
+  trial: 3, starter: 20, professional: 999999, enterprise: 999999, cancelado: 0,
+}
+
+function UpgradeWall({ plano }: { plano: string }) {
+  const navigate = useNavigate()
+  const isTrial = plano === 'trial'
+  return (
+    <div className="max-w-md mx-auto text-center py-10 px-4">
+      <div className="text-5xl mb-4">{isTrial ? '🚀' : '📊'}</div>
+      <h2 className="text-xl font-bold text-gray-900 mb-2">
+        {isTrial ? 'Suas simulações gratuitas acabaram' : 'Limite mensal atingido'}
+      </h2>
+      <p className="text-gray-500 text-sm mb-6">
+        {isTrial
+          ? 'Você usou as 3 simulações do trial. Assine o Professional para ter acesso ilimitado com ROI de Retenção, Flight Risk Score, Script de Comunicação e muito mais.'
+          : 'Você atingiu o limite de simulações deste mês. Faça upgrade para o Professional e tenha acesso ilimitado.'}
+      </p>
+      <div className="space-y-3">
+        <button onClick={() => navigate('/planos')} className="btn-primary w-full">
+          Ver planos — a partir de R$ 197/mês
+        </button>
+        <button onClick={() => navigate('/dashboard')} className="btn-secondary w-full text-sm">
+          Voltar ao dashboard
+        </button>
+      </div>
+      <p className="text-xs text-gray-400 mt-4">PIX · Ativação em 1 hora útil · Cancele quando quiser</p>
+    </div>
+  )
+}
 
 const PASSOS = ['Tipo', 'Dados', 'Contexto']
 
 export default function NovaSimulacao() {
+  const { profile } = useAuth()
   const [passo, setPasso] = useState(1)
+
+  // Verificar limite antes de mostrar o formulário
+  const plano = profile?.plano ?? 'trial'
+  const usadas = profile?.simulacoes_usadas_mes ?? 0
+  const limite = LIMITES_PLANO[plano] ?? 0
+  if (profile && usadas >= limite) {
+    return <UpgradeWall plano={plano} />
+  }
   const [tipo, setTipo] = useState<TipoMovimento | ''>('')
   const [dados, setDados] = useState<Partial<FormularioSimulacao>>({
     budget_informado: false,
