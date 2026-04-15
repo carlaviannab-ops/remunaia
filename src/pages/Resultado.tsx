@@ -13,6 +13,7 @@ import ConclusaoCard from '../components/resultado/ConclusaoCard'
 import TotalRewardsCard from '../components/resultado/TotalRewardsCard'
 import RoiRetencaoCard from '../components/resultado/RoiRetencaoCard'
 import ScriptComunicacaoCard from '../components/resultado/ScriptComunicacaoCard'
+import FontesPesquisaCard from '../components/resultado/FontesPesquisaCard'
 import Spinner from '../components/ui/Spinner'
 import type { Simulacao } from '../types'
 
@@ -88,6 +89,10 @@ export default function Resultado() {
           salarioProposto={simulacao.salario_proposto}
           compaRatio={r.total_rewards?.compa_ratio}
         />
+      )}
+
+      {r?.fontes_pesquisa && r.fontes_pesquisa.length > 0 && (
+        <FontesPesquisaCard fontes={r.fontes_pesquisa} />
       )}
 
       {r?.equidade_interna && (

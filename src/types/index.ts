@@ -107,6 +107,23 @@ export interface TotalRewards {
   posicao_faixa: 'abaixo' | 'dentro' | 'acima'
 }
 
+export type TipoFonte =
+  | 'pesquisa_salarial'
+  | 'dados_governamentais'
+  | 'portal_empregos'
+  | 'consultoria'
+  | 'associacao_setorial'
+
+export interface FontePesquisa {
+  nome: string            // Nome completo da fonte
+  organizacao: string     // Entidade responsável
+  tipo: TipoFonte
+  cobertura: string       // O que cobre (setor, cargos, região)
+  ano_referencia: string  // Ano dos dados (ex: "2024")
+  url: string             // Link oficial
+  relevancia: string      // Por que foi selecionada para esta simulação
+}
+
 export interface ScriptComunicacao {
   aprovacao: string
   aprovacao_parcial: string
@@ -131,6 +148,7 @@ export interface ResultadoSimulacao {
   total_rewards?: TotalRewards
   script_comunicacao?: ScriptComunicacao
   roi_retencao?: RoiRetencao
+  fontes_pesquisa?: FontePesquisa[]
 }
 
 // ---- Simulação (tabela: public.simulacoes) ----

@@ -21,7 +21,7 @@ Estrutura obrigatória:
     { "componente": "Encargos (CLT ~70%)", "valor_atual": number, "valor_proposto": number, "variacao_percentual": number, "custo_total_empresa": number },
     { "componente": "Custo Total Mensal", "valor_atual": number, "valor_proposto": number, "variacao_percentual": number, "custo_total_empresa": number }
   ],
-  "benchmark_mercado": { "p25": number, "p50": number, "p75": number, "fonte": "Mercer/Catho Brasil 2024 (estimativa)" },
+  "benchmark_mercado": { "p25": number, "p50": number, "p75": number, "fonte": "Mercer TRS / WTW / CAGED — estimativa baseada em fontes de mercado 2024" },
   "equidade_interna": { "status": "adequado", "posicao_relativa": "string", "minimo_grupo": number, "mediana_grupo": number, "maximo_grupo": number, "observacao": "string" },
   "riscos": [{ "nivel": "baixo", "descricao": "string", "mitigacao": "string" }],
   "recomendacao": { "decisao": "aprovado", "justificativa": "string detalhada em português", "salario_sugerido": number, "percentual_sugerido": number, "proximos_passos": ["string"] },
@@ -75,7 +75,42 @@ Instruções para script_comunicacao:
 - Cada script: 2-3 parágrafos, tom profissional e humano, em português
 - aprovacao: script para quando a decisão foi aprovada — confirme o novo salário, reconheça a contribuição, mostre o próximo passo
 - aprovacao_parcial: script para aprovação com ressalvas — seja honesto sobre o limite, explique o critério, ofereça um prazo ou marco futuro
-- negativa: script para quando não foi aprovado — explique sem jargões, preserve o relacionamento, deixe porta aberta com condição clara`
+- negativa: script para quando não foi aprovado — explique sem jargões, preserve o relacionamento, deixe porta aberta com condição clara
+
+OBRIGATÓRIO: inclua sempre o campo "fontes_pesquisa" na raiz do JSON:
+"fontes_pesquisa": [
+  {
+    "nome": "string — nome completo da fonte",
+    "organizacao": "string — entidade responsável",
+    "tipo": "pesquisa_salarial" | "dados_governamentais" | "portal_empregos" | "consultoria" | "associacao_setorial",
+    "cobertura": "string — cargos/setor/região cobertos",
+    "ano_referencia": "string — ex: 2024",
+    "url": "string — URL oficial",
+    "relevancia": "string — por que esta fonte é relevante para este cargo/setor específico"
+  }
+]
+
+Instruções para fontes_pesquisa:
+- Selecione OBRIGATORIAMENTE entre 4 e 5 fontes da lista abaixo. NÃO invente fontes fora desta lista.
+- Escolha as mais relevantes para o cargo e setor informados.
+- Sempre inclua ao menos 1 fonte de dados governamentais e 1 pesquisa salarial formal.
+
+LISTA DE FONTES PERMITIDAS (use exatamente estes dados):
+
+1. { "nome": "Mercer Total Remuneration Survey (TRS) Brasil", "organizacao": "Mercer Brasil", "tipo": "pesquisa_salarial", "cobertura": "Todos os setores — Brasil", "ano_referencia": "2024", "url": "https://www.mercer.com/en/brazil/solutions/talent/remuneration-data-surveys.html" }
+2. { "nome": "Willis Towers Watson — Pesquisa de Remuneração Total", "organizacao": "WTW Brasil", "tipo": "pesquisa_salarial", "cobertura": "Executivos, gestores e especialistas — Brasil", "ano_referencia": "2024", "url": "https://www.wtwco.com/pt-BR/solutions/products/survey-reports-brasil" }
+3. { "nome": "Korn Ferry — Pay Benchmark Brasil", "organizacao": "Korn Ferry", "tipo": "pesquisa_salarial", "cobertura": "Todos os níveis hierárquicos — Brasil", "ano_referencia": "2024", "url": "https://www.kornferry.com/capabilities/total-rewards/pay" }
+4. { "nome": "Guia Salarial Robert Half", "organizacao": "Robert Half Brasil", "tipo": "consultoria", "cobertura": "Finanças, TI, RH, Jurídico, Engenharia, Varejo — Brasil", "ano_referencia": "2025", "url": "https://www.roberthalf.com.br/guia-salarial" }
+5. { "nome": "Hays Brasil — Guia Salarial", "organizacao": "Hays Brasil", "tipo": "consultoria", "cobertura": "TI, Engenharia, Financeiro, Logística, Marketing — Brasil", "ano_referencia": "2025", "url": "https://www.hays.com.br/guia-salarial" }
+6. { "nome": "Catho — Pesquisa Salarial", "organizacao": "Catho Online", "tipo": "portal_empregos", "cobertura": "Mais de 500 cargos — Brasil", "ano_referencia": "2024", "url": "https://www.catho.com.br/profissoes" }
+7. { "nome": "Glassdoor Brasil — Salários", "organizacao": "Glassdoor", "tipo": "portal_empregos", "cobertura": "Salários declarados por profissionais — Brasil", "ano_referencia": "2024", "url": "https://www.glassdoor.com.br/Salarios" }
+8. { "nome": "LinkedIn Salary Insights Brasil", "organizacao": "LinkedIn", "tipo": "portal_empregos", "cobertura": "Salários por cargo e região — Brasil", "ano_referencia": "2024", "url": "https://www.linkedin.com/salary" }
+9. { "nome": "CAGED — Cadastro Geral de Empregados e Desempregados", "organizacao": "Ministério do Trabalho e Emprego (MTE)", "tipo": "dados_governamentais", "cobertura": "Admissões, demissões e salários formais — Brasil", "ano_referencia": "2024", "url": "https://www.gov.br/trabalho-e-emprego/pt-br/assuntos/estatisticas-trabalho/caged" }
+10. { "nome": "RAIS — Relação Anual de Informações Sociais", "organizacao": "Ministério do Trabalho e Emprego (MTE)", "tipo": "dados_governamentais", "cobertura": "Vínculos empregatícios formais e remuneração — Brasil", "ano_referencia": "2023", "url": "https://www.gov.br/trabalho-e-emprego/pt-br/assuntos/estatisticas-trabalho/rais" }
+11. { "nome": "PNAD Contínua — Rendimento de Trabalho", "organizacao": "IBGE", "tipo": "dados_governamentais", "cobertura": "Rendimentos por ocupação, região e escolaridade — Brasil", "ano_referencia": "2024", "url": "https://www.ibge.gov.br/estatisticas/sociais/trabalho/17270-pnad-continua.html" }
+12. { "nome": "Stack Overflow Developer Survey", "organizacao": "Stack Overflow", "tipo": "associacao_setorial", "cobertura": "Salários de desenvolvedores e profissionais de TI — global com recorte Brasil", "ano_referencia": "2024", "url": "https://survey.stackoverflow.co/2024" } — USE APENAS para cargos de TI/tecnologia
+13. { "nome": "Brasscom — Pesquisa de Recursos Humanos em TIC", "organizacao": "Brasscom", "tipo": "associacao_setorial", "cobertura": "Profissionais de tecnologia — Brasil", "ano_referencia": "2024", "url": "https://brasscom.org.br/publicacoes" } — USE APENAS para cargos de TI/tecnologia
+14. { "nome": "DIEESE — Pesquisa de Emprego e Desemprego", "organizacao": "DIEESE", "tipo": "dados_governamentais", "cobertura": "Mercado de trabalho formal e informal — regiões metropolitanas do Brasil", "ano_referencia": "2024", "url": "https://www.dieese.org.br/pesquisaemprego" } — USE para cargos operacionais e de nível técnico`
 
 // Modelos Groq em ordem de preferência
 const GROQ_MODELS = [
@@ -188,7 +223,7 @@ serve(async req => {
         nivel_senioridade: formulario.nivel_senioridade || null,
         tempo_cargo: formulario.tempo_cargo ?? null,
         status: 'processando',
-        prompt_version: '8.0',
+        prompt_version: '9.0',
       })
       .select('id')
       .single()
