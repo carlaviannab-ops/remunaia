@@ -47,9 +47,11 @@ export default function RoiRetencaoCard({ roi }: Props) {
         {roi.interpretacao}
       </div>
 
-      <p className="text-xs text-gray-300 mt-3">
-        Fator de turnover utilizado: {roi.fator_utilizado}x salário anual (referência: benchmarks SHRM/ABRHB)
-      </p>
+      {roi.fator_utilizado != null && (
+        <p className="text-xs text-gray-300 mt-3">
+          Fator de turnover utilizado: {roi.fator_utilizado}x salário anual (referência: benchmarks SHRM/ABRHB)
+        </p>
+      )}
     </div>
   )
 }

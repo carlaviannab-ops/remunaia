@@ -136,15 +136,15 @@ export default function Resultado() {
         <TotalRewardsCard totalRewards={r.total_rewards} />
       )}
 
-      {r?.roi_retencao && (
+      {r?.roi_retencao && r.roi_retencao.custo_turnover_estimado != null && (
         <RoiRetencaoCard roi={r.roi_retencao} />
       )}
 
-      {r?.flight_risk && (
+      {r?.flight_risk && r.flight_risk.nivel != null && (
         <FlightRiskCard flightRisk={r.flight_risk} />
       )}
 
-      {r?.roadmap_salarial && (
+      {r?.roadmap_salarial && r.roadmap_salarial.etapas?.length > 0 && (
         <RoadmapSalarialCard roadmap={r.roadmap_salarial} />
       )}
 

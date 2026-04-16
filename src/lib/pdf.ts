@@ -103,7 +103,7 @@ export function gerarPDF(simulacao: Simulacao): void {
       doc.text(formatarMoeda(item.valor_atual), colX[1], y)
       doc.text(formatarMoeda(item.valor_proposto), colX[2], y)
       doc.text(
-        `${item.variacao_percentual >= 0 ? '+' : ''}${formatarPorcentagem(item.variacao_percentual)}`,
+        item.variacao_percentual != null ? `${item.variacao_percentual >= 0 ? '+' : ''}${formatarPorcentagem(item.variacao_percentual)}` : '—',
         colX[3],
         y
       )

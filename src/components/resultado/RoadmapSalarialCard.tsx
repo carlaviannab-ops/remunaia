@@ -20,9 +20,9 @@ export default function RoadmapSalarialCard({ roadmap: rm }: Props) {
       </div>
 
       <div className="relative">
-        {rm.etapas.map((etapa, i) => {
+        {(rm.etapas ?? []).map((etapa, i) => {
           const cor = ETAPA_COR[i] ?? ETAPA_COR[2]
-          const isLast = i === rm.etapas.length - 1
+          const isLast = i === (rm.etapas ?? []).length - 1
           return (
             <div key={etapa.numero} className="flex gap-4 mb-0">
               {/* Linha do tempo */}
@@ -68,7 +68,7 @@ export default function RoadmapSalarialCard({ roadmap: rm }: Props) {
         </div>
         <div className="text-right">
           <p className="text-xs text-gray-400">Prazo total</p>
-          <p className="text-sm font-semibold text-gray-700">{rm.etapas[rm.etapas.length - 1]?.prazo ?? '12–18 meses'}</p>
+          <p className="text-sm font-semibold text-gray-700">{(rm.etapas ?? [])[( rm.etapas ?? []).length - 1]?.prazo ?? '12–18 meses'}</p>
         </div>
       </div>
 

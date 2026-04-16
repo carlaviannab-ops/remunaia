@@ -6,4 +6,4 @@ Disallow: /historico
 Disallow: /conta
 Disallow: /admin
 
-Sitemap: https://remunaia.netlify.app/sitemap.xml
+Sitemap: https://remunaia.com.br/sitemap.xml

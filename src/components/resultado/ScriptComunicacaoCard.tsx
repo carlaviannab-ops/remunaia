@@ -24,9 +24,10 @@ export default function ScriptComunicacaoCard({ script, decisao }: Props) {
   const [aba, setAba] = useState<Aba>(abaParaDecisao(decisao))
   const [copiado, setCopiado] = useState(false)
 
-  const texto = script[aba]
+  const texto = script[aba] ?? ''
 
   function copiar() {
+    if (!texto) return
     navigator.clipboard.writeText(texto).then(() => {
       setCopiado(true)
       setTimeout(() => setCopiado(false), 2000)

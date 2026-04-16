@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { useProfile } from '../hooks/useProfile'
 import { supabase } from '../lib/supabase'
@@ -7,8 +7,15 @@ import Spinner from '../components/ui/Spinner'
 export default function Conta() {
   const { user } = useAuth()
   const { profile, loading, atualizar } = useProfile()
-  const [nome, setNome] = useState(profile?.nome ?? '')
-  const [empresa, setEmpresa] = useState(profile?.empresa ?? '')
+  const [nome, setNome] = useState('')
+  const [empresa, setEmpresa] = useState('')
+
+  useEffect(() => {
+    if (profile) {
+      setNome(profile.nome ?? '')
+      setEmpresa(profile.empresa ?? '')
+    }
+  }, [profile])
   const [salvando, setSalvando] = useState(false)
   const [mensagem, setMensagem] = useState('')
 

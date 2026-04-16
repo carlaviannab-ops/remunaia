@@ -20,7 +20,7 @@ const FATORES_LABEL: Record<string, string> = {
 
 export default function FlightRiskCard({ flightRisk: fr }: Props) {
   const cfg = NIVEL_CONFIG[fr.nivel] ?? NIVEL_CONFIG.moderado
-  const pct = Math.min(100, Math.max(0, fr.score))
+  const pct = Math.min(100, Math.max(0, fr.score ?? 0))
 
   return (
     <div className={`card p-5 border ${cfg.border}`}>
@@ -50,7 +50,7 @@ export default function FlightRiskCard({ flightRisk: fr }: Props) {
 
       {/* Fatores */}
       <div className="space-y-2.5 mb-4">
-        {Object.entries(fr.fatores).map(([key, valor]) => (
+        {Object.entries(fr.fatores ?? {}).map(([key, valor]) => (
           <div key={key} className="flex items-start gap-2.5">
             <div className={`w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${cfg.gauge}`} />
             <div>

@@ -44,6 +44,12 @@ const PASSOS = ['Tipo', 'Dados', 'Contexto']
 export default function NovaSimulacao() {
   const { profile } = useAuth()
   const [passo, setPasso] = useState(1)
+  const [tipo, setTipo] = useState<TipoMovimento | ''>('')
+  const [dados, setDados] = useState<Partial<FormularioSimulacao>>({
+    budget_informado: false,
+    pares_existem: false,
+  })
+  const { simular, loading, erro, tentativa } = useSimulacao()
 
   // Verificar limite antes de mostrar o formulário
   const plano = profile?.plano ?? 'trial'
@@ -52,11 +58,6 @@ export default function NovaSimulacao() {
   if (profile && usadas >= limite) {
     return <UpgradeWall plano={plano} />
   }
-  const [tipo, setTipo] = useState<TipoMovimento | ''>('')
-  const [dados, setDados] = useState<Partial<FormularioSimulacao>>({
-    budget_informado: false,
-    pares_existem: false,
-  })
 
   function handleTipoChange(novoTipo: TipoMovimento) {
     setTipo(novoTipo)
@@ -69,7 +70,6 @@ export default function NovaSimulacao() {
       estado: dados.estado,
     })
   }
-  const { simular, loading, erro, tentativa } = useSimulacao()
 
   function atualizarCampo(campo: keyof FormularioSimulacao, valor: string | number | boolean) {
     setDados(prev => ({ ...prev, [campo]: valor }))

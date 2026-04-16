@@ -1,6 +1,8 @@
 // Formatar valor monetário em R$
-export const formatarMoeda = (valor: number): string =>
-  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor)
+export const formatarMoeda = (valor: number | null | undefined): string => {
+  if (valor == null) return '—'
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor)
+}
 
 // Formatar percentual
 export const formatarPorcentagem = (valor: number | null | undefined): string => {
