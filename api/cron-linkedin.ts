@@ -170,22 +170,20 @@ async function getNextTheme(): Promise<Theme> {
 }
 
 async function generateContent(theme: Theme): Promise<string> {
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'x-api-key': process.env.ANTHROPIC_API_KEY!,
-      'anthropic-version': '2023-06-01',
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 1024,
-      messages: [{ role: 'user', content: PROMPTS[theme] }],
-    }),
-  })
-  if (!res.ok) throw new Error(`Anthropic API error: ${await res.text()}`)
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: PROMPTS[theme] }] }],
+        generationConfig: { maxOutputTokens: 1024, temperature: 0.9 },
+      }),
+    }
+  )
+  if (!res.ok) throw new Error(`Gemini API error: ${await res.text()}`)
   const data = await res.json()
-  return data.content[0].text
+  return data.candidates[0].content.parts[0].text
 }
 
 async function postToLinkedIn(token: string, content: string): Promise<string> {
