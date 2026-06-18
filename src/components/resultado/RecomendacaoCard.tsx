@@ -1,4 +1,4 @@
-import { formatarMoeda, formatarPorcentagem } from '../../lib/utils'
+import { formatarMoeda } from '../../lib/utils'
 import type { Recomendacao } from '../../types'
 
 interface Props {
@@ -19,50 +19,46 @@ const iconDecisao: Record<string, string> = {
   aguardar: '⏳',
 }
 
+const corUrgencia: Record<string, string> = {
+  imediata: 'text-red-600 bg-red-50',
+  'pode aguardar': 'text-yellow-600 bg-yellow-50',
+  'nao recomendado agora': 'text-gray-600 bg-gray-100',
+}
+
 export default function RecomendacaoCard({ recomendacao }: Props) {
+  const decisaoKey = recomendacao.decisao?.toLowerCase().replace(/ /g, '_') ?? ''
+
   return (
-    <div className={`card p-5 border-l-4 ${corDecisao[recomendacao.decisao] ?? 'border-gray-400 bg-gray-50'}`}>
+    <div className={`card p-5 border-l-4 ${corDecisao[decisaoKey] ?? 'border-gray-400 bg-gray-50'}`}>
       <div className="flex items-center gap-2 mb-3">
-        <span className="text-xl">{iconDecisao[recomendacao.decisao]}</span>
+        <span className="text-xl">{iconDecisao[decisaoKey] ?? '📋'}</span>
         <h3 className="font-semibold text-gray-900">Recomendação da IA</h3>
+        {recomendacao.urgencia && (
+          <span className={`ml-auto text-xs font-semibold px-2.5 py-1 rounded-full ${corUrgencia[recomendacao.urgencia] ?? 'text-gray-600 bg-gray-100'}`}>
+            {recomendacao.urgencia === 'imediata' ? 'Urgente' : recomendacao.urgencia === 'pode aguardar' ? 'Pode aguardar' : 'Não recomendado agora'}
+          </span>
+        )}
       </div>
 
       <p className="text-sm text-gray-700 mb-4 leading-relaxed">{recomendacao.justificativa}</p>
 
-      {(recomendacao.salario_sugerido != null || recomendacao.percentual_sugerido != null) && (
+      {recomendacao.salario_recomendado != null && (
         <div className="flex gap-4 mb-4">
-          {recomendacao.salario_sugerido != null && (
-            <div className="bg-white rounded-lg px-4 py-3 shadow-sm">
-              <p className="text-xs text-gray-400">Salário sugerido</p>
-              <p className="text-lg font-bold text-primary-700">
-                {formatarMoeda(recomendacao.salario_sugerido)}
-              </p>
-            </div>
-          )}
-          {recomendacao.percentual_sugerido != null && (
-            <div className="bg-white rounded-lg px-4 py-3 shadow-sm">
-              <p className="text-xs text-gray-400">Percentual sugerido</p>
-              <p className="text-lg font-bold text-primary-700">
-                {formatarPorcentagem(recomendacao.percentual_sugerido)}
-              </p>
-            </div>
-          )}
+          <div className="bg-white rounded-lg px-4 py-3 shadow-sm">
+            <p className="text-xs text-gray-400">Salário recomendado</p>
+            <p className="text-lg font-bold text-primary-700">
+              {formatarMoeda(recomendacao.salario_recomendado)}
+            </p>
+          </div>
         </div>
       )}
 
-      {recomendacao.proximos_passos && recomendacao.proximos_passos.length > 0 && (
-        <div>
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-            Próximos passos
+      {recomendacao.condicoes && (
+        <div className="mt-2">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+            Condições
           </p>
-          <ul className="space-y-1">
-            {recomendacao.proximos_passos.map((passo, i) => (
-              <li key={i} className="text-sm text-gray-700 flex items-start gap-2">
-                <span className="text-primary-500 mt-0.5">›</span>
-                {passo}
-              </li>
-            ))}
-          </ul>
+          <p className="text-sm text-gray-700 leading-relaxed">{recomendacao.condicoes}</p>
         </div>
       )}
     </div>

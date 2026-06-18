@@ -12,16 +12,19 @@ export default function TabelaRiscos({ riscos }: Props) {
         <h3 className="font-semibold text-gray-900">Análise de Riscos</h3>
       </div>
       <div className="divide-y divide-gray-50">
-        {riscos.map((risco, i) => (
+        {riscos.map((item, i) => (
           <div key={i} className="px-5 py-4 flex items-start gap-4">
             <div className="pt-0.5">
-              <Badge nivel={risco.nivel} />
+              <Badge nivel={item.nivel} />
             </div>
             <div className="flex-1">
-              <p className="font-medium text-gray-900 text-sm">{risco.descricao}</p>
-              {risco.mitigacao && (
+              <p className="font-medium text-gray-900 text-sm">{item.risco}</p>
+              {item.descricao && (
+                <p className="text-xs text-gray-500 mt-0.5">{item.descricao}</p>
+              )}
+              {item.mitigacao && (
                 <p className="text-xs text-gray-500 mt-1">
-                  <span className="font-medium text-gray-700">Mitigação:</span> {risco.mitigacao}
+                  <span className="font-medium text-gray-700">Mitigação:</span> {item.mitigacao}
                 </p>
               )}
             </div>

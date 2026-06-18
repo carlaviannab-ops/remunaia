@@ -1,11 +1,12 @@
 import jsPDF from 'jspdf'
 import { formatarMoeda, formatarPorcentagem, formatarData, labelTipo } from './utils'
+import { normalizarResultado } from './schema'
 import type { Simulacao } from '../types'
 
 export function gerarPDF(simulacao: Simulacao): void {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' })
   if (!simulacao.resultado) return
-  const resultado = simulacao.resultado
+  const resultado = normalizarResultado(simulacao.resultado as Record<string, unknown>)
 
   const largura = doc.internal.pageSize.getWidth()
   let y = 20
@@ -78,13 +79,12 @@ export function gerarPDF(simulacao: Simulacao): void {
   })
 
   // Impacto financeiro
-  if (resultado.tabela_financeira?.length) {
+  if (resultado.simulacao_financeira?.tabela?.length) {
     novaPaginaSe(50)
     secao('Impacto Financeiro')
 
-    const headers = ['Componente', 'Atual', 'Proposto', 'Variação', 'Custo/ano']
-    const colWidths = [55, 30, 30, 25, 35]
-    const colX = [20, 75, 105, 135, 158]
+    const headers = ['Cenário', 'Salário Mensal', 'Variação', 'Custo Total/ano']
+    const colX = [20, 90, 130, 155]
 
     doc.setFillColor(240, 245, 255)
     doc.rect(20, y - 2, largura - 40, 8, 'F')
@@ -94,20 +94,19 @@ export function gerarPDF(simulacao: Simulacao): void {
     headers.forEach((h, i) => doc.text(h, colX[i], y + 4))
     y += 10
 
-    resultado.tabela_financeira.forEach(item => {
+    resultado.simulacao_financeira.tabela.forEach((item: { cenario: string; salario_mensal: number; variacao_percentual: number; custo_total_empregador_anual: number }) => {
       novaPaginaSe(10)
       doc.setFontSize(9)
       doc.setFont('helvetica', 'normal')
       doc.setTextColor(30, 30, 30)
-      doc.text(item.componente, colX[0], y, { maxWidth: colWidths[0] })
-      doc.text(formatarMoeda(item.valor_atual), colX[1], y)
-      doc.text(formatarMoeda(item.valor_proposto), colX[2], y)
+      doc.text(item.cenario, colX[0], y, { maxWidth: 65 })
+      doc.text(formatarMoeda(item.salario_mensal), colX[1], y)
       doc.text(
         item.variacao_percentual != null ? `${item.variacao_percentual >= 0 ? '+' : ''}${formatarPorcentagem(item.variacao_percentual)}` : '—',
-        colX[3],
+        colX[2],
         y
       )
-      doc.text(formatarMoeda(item.custo_total_empresa), colX[4], y)
+      doc.text(formatarMoeda(item.custo_total_empregador_anual), colX[3], y)
       y += 7
     })
   }
@@ -153,20 +152,21 @@ export function gerarPDF(simulacao: Simulacao): void {
       y += 6
     })
 
-    if (rec.salario_sugerido != null) {
+    if (rec.salario_recomendado != null) {
       y += 2
-      linha(`Salário sugerido: ${formatarMoeda(rec.salario_sugerido)}`, 10, true, [20, 120, 60])
+      linha(`Salário recomendado: ${formatarMoeda(rec.salario_recomendado)}`, 10, true, [20, 120, 60])
     }
 
-    if (rec.proximos_passos?.length) {
+    if (rec.condicoes) {
       y += 4
-      linha('Próximos passos:', 10, true)
-      rec.proximos_passos.forEach(p => {
+      linha('Condições:', 10, true)
+      const linhasCond = doc.splitTextToSize(rec.condicoes, largura - 44)
+      doc.setFontSize(10)
+      doc.setFont('helvetica', 'normal')
+      doc.setTextColor(50, 50, 50)
+      linhasCond.forEach((l: string) => {
         novaPaginaSe(8)
-        doc.setFontSize(10)
-        doc.setFont('helvetica', 'normal')
-        doc.setTextColor(50, 50, 50)
-        doc.text(`• ${p}`, 24, y)
+        doc.text(l, 24, y)
         y += 6
       })
     }

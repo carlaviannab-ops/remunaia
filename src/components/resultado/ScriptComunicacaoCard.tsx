@@ -1,34 +1,16 @@
 import { useState } from 'react'
-import type { ScriptComunicacao, Recomendacao } from '../../types'
+import type { ComunicacaoColaborador } from '../../types'
 
 interface Props {
-  script: ScriptComunicacao
-  decisao: Recomendacao['decisao']
+  comunicacao: ComunicacaoColaborador
 }
 
-type Aba = 'aprovacao' | 'aprovacao_parcial' | 'negativa'
-
-const ABAS: { key: Aba; label: string; cor: string }[] = [
-  { key: 'aprovacao', label: 'Aprovado', cor: 'text-green-700 border-green-500 bg-green-50' },
-  { key: 'aprovacao_parcial', label: 'Com ressalvas', cor: 'text-yellow-700 border-yellow-500 bg-yellow-50' },
-  { key: 'negativa', label: 'Não aprovado', cor: 'text-red-700 border-red-400 bg-red-50' },
-]
-
-function abaParaDecisao(decisao: Recomendacao['decisao']): Aba {
-  if (decisao === 'aprovado') return 'aprovacao'
-  if (decisao === 'aprovado_com_ressalvas' || decisao === 'aguardar') return 'aprovacao_parcial'
-  return 'negativa'
-}
-
-export default function ScriptComunicacaoCard({ script, decisao }: Props) {
-  const [aba, setAba] = useState<Aba>(abaParaDecisao(decisao))
+export default function ScriptComunicacaoCard({ comunicacao }: Props) {
   const [copiado, setCopiado] = useState(false)
 
-  const texto = script[aba] ?? ''
-
   function copiar() {
-    if (!texto) return
-    navigator.clipboard.writeText(texto).then(() => {
+    if (!comunicacao.texto) return
+    navigator.clipboard.writeText(comunicacao.texto).then(() => {
       setCopiado(true)
       setTimeout(() => setCopiado(false), 2000)
     })
@@ -39,7 +21,9 @@ export default function ScriptComunicacaoCard({ script, decisao }: Props) {
       <div className="flex items-start justify-between mb-4">
         <div>
           <h3 className="font-semibold text-gray-900">Script de Comunicação</h3>
-          <p className="text-xs text-gray-400 mt-0.5">Roteiro pronto para a conversa com o colaborador</p>
+          <p className="text-xs text-gray-400 mt-0.5">
+            Tom: <span className="font-medium text-gray-600">{comunicacao.tom}</span>
+          </p>
         </div>
         <button
           onClick={copiar}
@@ -49,30 +33,28 @@ export default function ScriptComunicacaoCard({ script, decisao }: Props) {
         </button>
       </div>
 
-      {/* Abas */}
-      <div className="flex gap-2 mb-4">
-        {ABAS.map(a => (
-          <button
-            key={a.key}
-            onClick={() => setAba(a.key)}
-            className={`text-xs font-medium px-3 py-1.5 rounded-full border transition-colors ${
-              aba === a.key
-                ? a.cor
-                : 'text-gray-400 border-gray-200 bg-white hover:bg-gray-50'
-            }`}
-          >
-            {a.label}
-          </button>
-        ))}
+      <div className="bg-gray-50 rounded-xl p-4 text-sm text-gray-700 leading-relaxed whitespace-pre-wrap mb-4">
+        {comunicacao.texto}
       </div>
 
-      {/* Conteúdo */}
-      <div className="bg-gray-50 rounded-xl p-4 text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
-        {texto}
-      </div>
+      {comunicacao.pontos_chave && comunicacao.pontos_chave.length > 0 && (
+        <div>
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+            Pontos-chave para destacar
+          </p>
+          <ul className="space-y-1">
+            {comunicacao.pontos_chave.map((ponto, i) => (
+              <li key={i} className="text-sm text-gray-700 flex items-start gap-2">
+                <span className="text-primary-500 mt-0.5 shrink-0">›</span>
+                {ponto}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <p className="text-xs text-gray-300 mt-3">
-        Personalize antes de usar. A aba destacada corresponde à decisão da IA para esta simulação.
+        Personalize antes de usar.
       </p>
     </div>
   )

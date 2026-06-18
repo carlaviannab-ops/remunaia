@@ -2,13 +2,14 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { formatarData, labelTipo, formatarMoeda } from '../lib/utils'
+import { normalizarResultado } from '../lib/schema'
 import Badge from '../components/ui/Badge'
 import Spinner from '../components/ui/Spinner'
 import type { Simulacao } from '../types'
 
 function ComparacaoModal({ a, b, onFechar }: { a: Simulacao; b: Simulacao; onFechar: () => void }) {
-  const ra = a.resultado
-  const rb = b.resultado
+  const ra = a.resultado ? normalizarResultado(a.resultado as Record<string, unknown>) : undefined
+  const rb = b.resultado ? normalizarResultado(b.resultado as Record<string, unknown>) : undefined
 
   const linhas = [
     { label: 'Cargo', va: a.cargo_atual + (a.cargo_proposto ? ` → ${a.cargo_proposto}` : ''), vb: b.cargo_atual + (b.cargo_proposto ? ` → ${b.cargo_proposto}` : '') },
@@ -17,7 +18,7 @@ function ComparacaoModal({ a, b, onFechar }: { a: Simulacao; b: Simulacao; onFec
     { label: 'Benchmark P50', va: ra?.benchmark_mercado ? formatarMoeda(ra.benchmark_mercado.p50) : '—', vb: rb?.benchmark_mercado ? formatarMoeda(rb.benchmark_mercado.p50) : '—' },
     { label: 'Compa-ratio', va: ra?.total_rewards?.compa_ratio != null ? `${ra.total_rewards.compa_ratio.toFixed(1)}%` : '—', vb: rb?.total_rewards?.compa_ratio != null ? `${rb.total_rewards.compa_ratio.toFixed(1)}%` : '—' },
     { label: 'Total Rewards anual', va: ra?.total_rewards?.total_anual ? formatarMoeda(ra.total_rewards.total_anual) : '—', vb: rb?.total_rewards?.total_anual ? formatarMoeda(rb.total_rewards.total_anual) : '—' },
-    { label: 'Equidade interna', va: ra?.equidade_interna?.status ?? '—', vb: rb?.equidade_interna?.status ?? '—' },
+    { label: 'Equidade interna', va: ra?.equidade_interna?.risco_distorcao ?? '—', vb: rb?.equidade_interna?.risco_distorcao ?? '—' },
     { label: 'Decisão IA', va: ra?.recomendacao?.decisao?.replace(/_/g, ' ') ?? '—', vb: rb?.recomendacao?.decisao?.replace(/_/g, ' ') ?? '—' },
   ]
 

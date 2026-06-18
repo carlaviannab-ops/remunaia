@@ -8,6 +8,24 @@ interface Props {
   modo?: 'login' | 'cadastro'
 }
 
+function traduzirErro(msg: string): string {
+  if (msg.includes('already registered') || msg.includes('User already registered'))
+    return 'Este e-mail já está cadastrado. Faça login ou recupere sua senha.'
+  if (msg.includes('Password should be') || msg.includes('password'))
+    return 'A senha deve ter pelo menos 8 caracteres.'
+  if (msg.includes('Invalid email') || msg.includes('invalid email'))
+    return 'E-mail inválido. Verifique e tente novamente.'
+  if (msg.includes('Email not confirmed'))
+    return 'Confirme seu e-mail antes de acessar. Verifique sua caixa de entrada.'
+  if (msg.includes('Invalid login credentials') || msg.includes('invalid_credentials'))
+    return 'E-mail ou senha incorretos.'
+  if (msg.includes('Email rate limit') || msg.includes('rate limit'))
+    return 'Muitas tentativas. Aguarde alguns minutos e tente novamente.'
+  if (msg.includes('Network') || msg.includes('fetch'))
+    return 'Erro de conexão. Verifique sua internet e tente novamente.'
+  return 'Ocorreu um erro. Tente novamente.'
+}
+
 export default function Login({ modo = 'login' }: Props) {
   const [isCadastro, setIsCadastro] = useState(modo === 'cadastro')
   const [isRecuperacao, setIsRecuperacao] = useState(false)
@@ -31,23 +49,34 @@ export default function Login({ modo = 'login' }: Props) {
         redirectTo: `${window.location.origin}/conta`,
       })
       setLoading(false)
-      if (error) { setErro('Não foi possível enviar o e-mail. Tente novamente.'); return }
+      if (error) { setErro(traduzirErro(error.message)); return }
       setSucesso('E-mail de recuperação enviado! Verifique sua caixa de entrada.')
       return
     }
 
     if (isCadastro) {
-      const { error } = await supabase.auth.signUp({
+      if (senha.trim().length < 8) {
+        setErro('A senha deve ter pelo menos 8 caracteres.')
+        setLoading(false)
+        return
+      }
+      const { data, error } = await supabase.auth.signUp({
         email,
         password: senha,
         options: { data: { nome, empresa } }
       })
-      if (error) { setErro(error.message); setLoading(false); return }
+      if (error) { setErro(traduzirErro(error.message)); setLoading(false); return }
+      if (!data.session) {
+        // Email de confirmação obrigatório (configuração do Supabase)
+        setSucesso('Cadastro realizado! Verifique seu e-mail para confirmar a conta antes de acessar.')
+        setLoading(false)
+        return
+      }
       track(eventos.CADASTRO, { empresa })
       navigate('/dashboard')
     } else {
       const { error } = await supabase.auth.signInWithPassword({ email, password: senha })
-      if (error) { setErro('Email ou senha incorretos'); setLoading(false); return }
+      if (error) { setErro(traduzirErro(error.message)); setLoading(false); return }
       track(eventos.LOGIN)
       navigate('/dashboard')
     }

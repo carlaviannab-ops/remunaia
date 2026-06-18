@@ -41,12 +41,12 @@ export function useSimulacao() {
           throw new Error(msg)
         }
 
-        if (!data?.id) throw new Error('Resposta inválida do servidor')
+        if (!data?.simulacao_id) throw new Error('Resposta inválida do servidor')
 
         track(eventos.SIMULACAO_CONCLUIDA, { tipo: formulario.tipo, cargo: formulario.cargo_atual })
         setLoading(false)
         setTentativa(0)
-        navigate(`/simulacao/${data.id}/resultado`)
+        navigate(`/simulacao/${data.simulacao_id}/resultado`)
         return
       } catch (e: any) {
         if (i < MAX_TENTATIVAS - 1) {

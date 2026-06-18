@@ -17,6 +17,7 @@ import FontesPesquisaCard from '../components/resultado/FontesPesquisaCard'
 import FlightRiskCard from '../components/resultado/FlightRiskCard'
 import RoadmapSalarialCard from '../components/resultado/RoadmapSalarialCard'
 import Spinner from '../components/ui/Spinner'
+import { normalizarResultado } from '../lib/schema'
 import type { Simulacao } from '../types'
 
 export default function Resultado() {
@@ -75,7 +76,7 @@ export default function Resultado() {
     )
   }
 
-  const r = simulacao.resultado
+  const r = simulacao.resultado ? normalizarResultado(simulacao.resultado as Record<string, unknown>) : undefined
 
   return (
     <div className="max-w-3xl mx-auto space-y-5">
@@ -103,8 +104,8 @@ export default function Resultado() {
 
       <ResumoScenario simulacao={simulacao} />
 
-      {r?.tabela_financeira && r.tabela_financeira.length > 0 && (
-        <TabelaFinanceira itens={r.tabela_financeira} />
+      {r?.simulacao_financeira?.tabela && r.simulacao_financeira.tabela.length > 0 && (
+        <TabelaFinanceira itens={r.simulacao_financeira.tabela} />
       )}
 
       {r?.benchmark_mercado && (
@@ -148,20 +149,26 @@ export default function Resultado() {
         <RoadmapSalarialCard roadmap={r.roadmap_salarial} />
       )}
 
-      {r?.script_comunicacao && r?.recomendacao && (
-        <ScriptComunicacaoCard
-          script={r.script_comunicacao}
-          decisao={r.recomendacao.decisao}
-        />
+      {r?.comunicacao_colaborador && (
+        <ScriptComunicacaoCard comunicacao={r.comunicacao_colaborador} />
       )}
 
-      {r?.conclusao && (
+      {r?.conclusao_estrategica && (
         <ConclusaoCard
-          conclusao={r.conclusao}
+          conclusao={r.conclusao_estrategica}
           onExportarPDF={handleExportarPDF}
           onNovaSimulacao={() => navigate('/simulacao/nova')}
           exportando={exportando}
         />
+      )}
+
+      {r?.aviso_metodologia && (
+        <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+          <p className="text-xs text-gray-500 flex gap-2">
+            <span className="shrink-0">ℹ️</span>
+            <span>{r.aviso_metodologia}</span>
+          </p>
+        </div>
       )}
     </div>
   )

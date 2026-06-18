@@ -13,8 +13,14 @@ function posicaoNoRange(valor: number, min: number, max: number) {
   return Math.min(100, Math.max(0, ((valor - min) / (max - min)) * 100))
 }
 
+const CONFIABILIDADE_CONFIG = {
+  alta: { label: 'Alta confiabilidade', cor: 'bg-green-100 text-green-700' },
+  media: { label: 'Média confiabilidade', cor: 'bg-yellow-100 text-yellow-700' },
+  baixa: { label: 'Baixa confiabilidade', cor: 'bg-red-100 text-red-700' },
+}
+
 export default function BenchmarkBar({ benchmark, salarioAtual, salarioProposto, compaRatio }: Props) {
-  const { p25, p50, p75, fonte } = benchmark
+  const { p25, p50, p75, fonte, confiabilidade, nota } = benchmark
   const min = p25 * 0.85
   const max = p75 * 1.15
 
@@ -28,7 +34,14 @@ export default function BenchmarkBar({ benchmark, salarioAtual, salarioProposto,
     <div className="card p-5">
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-semibold text-gray-900">Benchmark de Mercado</h3>
-        <span className="text-xs text-gray-400">{fonte}</span>
+        <div className="flex items-center gap-2">
+          {confiabilidade && (
+            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${CONFIABILIDADE_CONFIG[confiabilidade].cor}`}>
+              {CONFIABILIDADE_CONFIG[confiabilidade].label}
+            </span>
+          )}
+          <span className="text-xs text-gray-400">{fonte}</span>
+        </div>
       </div>
 
       {/* Barra de percentis */}
@@ -82,6 +95,10 @@ export default function BenchmarkBar({ benchmark, salarioAtual, salarioProposto,
           </div>
         ))}
       </div>
+
+      {nota && (
+        <p className="mt-3 text-xs text-gray-500 italic border-t border-gray-100 pt-3">{nota}</p>
+      )}
 
       {(salarioAtual != null || salarioProposto != null) && (
         <div className="mt-4 pt-4 border-t border-gray-100 flex flex-wrap gap-4 text-xs">

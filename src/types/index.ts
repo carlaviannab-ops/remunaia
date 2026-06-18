@@ -52,43 +52,52 @@ export interface FormularioSimulacao {
   bonus_multiplo?: number      // número de salários mensais (ex: 2 = 2 salários)
 }
 
-// ---- Resultado JSON (campo resultado JSONB) ----
+// ---- Resultado JSON (campo resultado JSONB) — schema v60 ----
 export interface TabelaFinanceiraItem {
-  componente: string
-  valor_atual: number
-  valor_proposto: number
+  cenario: string
+  salario_mensal: number
   variacao_percentual: number
-  custo_total_empresa: number
+  custo_anual_incremental: number
+  custo_total_empregador_anual: number
+}
+
+export interface SimulacaoFinanceira {
+  tabela: TabelaFinanceiraItem[]
+  nota?: string
 }
 
 export interface BenchmarkMercado {
   p25: number
   p50: number
   p75: number
+  p90?: number
   fonte: string
+  posicionamento_atual?: string
+  posicionamento_proposto?: string
+  ajuste_setor?: string
+  confiabilidade?: 'alta' | 'media' | 'baixa'
+  nota?: string
 }
 
 export interface EquidadeInterna {
-  status: 'adequado' | 'atencao' | 'critico'
-  posicao_relativa: string
-  minimo_grupo: number
-  mediana_grupo: number
-  maximo_grupo: number
-  observacao?: string
+  analise: string
+  risco_distorcao: 'baixo' | 'medio' | 'alto'
+  recomendacao_equidade: string
 }
 
 export interface Risco {
+  risco: string
   nivel: NivelRisco
   descricao: string
   mitigacao?: string
 }
 
 export interface Recomendacao {
-  decisao: 'aprovado' | 'aprovado_com_ressalvas' | 'reprovado' | 'aguardar'
+  decisao: string
+  salario_recomendado?: number
   justificativa: string
-  salario_sugerido?: number
-  percentual_sugerido?: number
-  proximos_passos?: string[]
+  condicoes?: string
+  urgencia?: 'imediata' | 'pode aguardar' | 'nao recomendado agora'
 }
 
 // Total Rewards — pacote completo de remuneração
@@ -153,10 +162,10 @@ export interface FontePesquisa {
   relevancia: string      // Por que foi selecionada para esta simulação
 }
 
-export interface ScriptComunicacao {
-  aprovacao: string
-  aprovacao_parcial: string
-  negativa: string
+export interface ComunicacaoColaborador {
+  tom: string
+  texto: string
+  pontos_chave: string[]
 }
 
 export interface RoiRetencao {
@@ -168,14 +177,18 @@ export interface RoiRetencao {
 }
 
 export interface ResultadoSimulacao {
-  tabela_financeira: TabelaFinanceiraItem[]
-  benchmark_mercado: BenchmarkMercado
-  equidade_interna: EquidadeInterna
-  riscos: Risco[]
-  recomendacao: Recomendacao
-  conclusao: string
+  resumo_cenario?: string
+  simulacao_financeira?: SimulacaoFinanceira
+  benchmark_mercado?: BenchmarkMercado
+  equidade_interna?: EquidadeInterna
+  riscos?: Risco[]
+  recomendacao?: Recomendacao
+  conclusao_estrategica?: string
+  suposicoes_adotadas?: string[]
+  comunicacao_colaborador?: ComunicacaoColaborador
+  aviso_metodologia?: string
+  // campos legados (simulações salvas antes da v60)
   total_rewards?: TotalRewards
-  script_comunicacao?: ScriptComunicacao
   roi_retencao?: RoiRetencao
   fontes_pesquisa?: FontePesquisa[]
   flight_risk?: FlightRisk
