@@ -4,5 +4,8 @@
       "path": "/api/cron-linkedin",
       "schedule": "0 10 */3 * *"
     }
+  ],
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
