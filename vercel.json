@@ -1,4 +1,6 @@
 {
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
   "crons": [
     {
       "path": "/api/cron-linkedin",
@@ -6,6 +8,6 @@
     }
   ],
   "rewrites": [
-    { "source": "/:path*", "destination": "/" }
+    { "source": "/:path*", "destination": "/index.html" }
   ]
 }
