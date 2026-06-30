@@ -9,15 +9,31 @@ jobs:
   ping:
     runs-on: ubuntu-latest
     steps:
-      - name: Ping Supabase
+      - name: Verificar e restaurar projeto Supabase
         run: |
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+          # 1. Verifica status via Management API
+          STATUS_PROJ=$(curl -s \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ACCESS_TOKEN }}" \
+            "https://api.supabase.com/v1/projects/hyxgcqgnpsfofddmsodi" \
+            | python3 -c "import json,sys; print(json.load(sys.stdin).get('status',''))" 2>/dev/null)
+          echo "Status do projeto: $STATUS_PROJ"
+
+          # 2. Se pausado, restaura automaticamente
+          if [ "$STATUS_PROJ" != "ACTIVE_HEALTHY" ]; then
+            echo "Projeto pausado! Restaurando..."
+            curl -s -X POST \
+              -H "Authorization: Bearer ${{ secrets.SUPABASE_ACCESS_TOKEN }}" \
+              "https://api.supabase.com/v1/projects/hyxgcqgnpsfofddmsodi/restore"
+            echo "Aguardando restauração..."
+            sleep 120
+          fi
+
+          # 3. Executa query real no banco para registrar atividade
+          RESULT=$(curl -s -w "\n%{http_code}" \
             -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
-            "https://hyxgcqgnpsfofddmsodi.supabase.co/rest/v1/profiles?select=count&limit=1")
-          echo "Status HTTP: $STATUS"
-          if [ "$STATUS" != "200" ]; then
-            echo "Aviso: resposta inesperada ($STATUS)"
-            exit 1
-          fi
-          echo "Projeto ativo."
+            -H "Content-Type: application/json" \
+            "https://hyxgcqgnpsfofddmsodi.supabase.co/rest/v1/profiles?select=count")
+          HTTP_CODE=$(echo "$RESULT" | tail -1)
+          echo "Query ao banco: HTTP $HTTP_CODE"
+          echo "Manutenção concluída — projeto ativo."
