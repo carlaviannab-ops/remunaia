@@ -2,7 +2,7 @@ name: RemunaIA Keep-Alive
 
 on:
   schedule:
-    - cron: '23 9 */4 * *'  # a cada 4 dias às 9h23 UTC
+    - cron: '23 9 */2 * *'  # a cada 2 dias às 9h23 UTC
   workflow_dispatch:         # permite rodar manualmente
 
 jobs:
@@ -18,14 +18,14 @@ jobs:
             | python3 -c "import json,sys; print(json.load(sys.stdin).get('status',''))" 2>/dev/null)
           echo "Status do projeto: $STATUS_PROJ"
 
-          # 2. Se pausado, restaura automaticamente
+          # 2. Se pausado, restaura e aguarda até 5 minutos
           if [ "$STATUS_PROJ" != "ACTIVE_HEALTHY" ]; then
             echo "Projeto pausado! Restaurando..."
             curl -s -X POST \
               -H "Authorization: Bearer ${{ secrets.SUPABASE_ACCESS_TOKEN }}" \
               "https://api.supabase.com/v1/projects/hyxgcqgnpsfofddmsodi/restore"
-            echo "Aguardando restauração..."
-            sleep 120
+            echo "Aguardando restauração (300s)..."
+            sleep 300
           fi
 
           # 3. Executa query real no banco para registrar atividade
@@ -35,5 +35,14 @@ jobs:
             -H "Content-Type: application/json" \
             "https://hyxgcqgnpsfofddmsodi.supabase.co/rest/v1/profiles?select=count")
           HTTP_CODE=$(echo "$RESULT" | tail -1)
+          BODY=$(echo "$RESULT" | head -1)
           echo "Query ao banco: HTTP $HTTP_CODE"
+          echo "Resposta: $BODY"
+
+          # 4. Falha o workflow se a query não retornou 200
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "ERRO: Query falhou com HTTP $HTTP_CODE"
+            exit 1
+          fi
+
           echo "Manutenção concluída — projeto ativo."
