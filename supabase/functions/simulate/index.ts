@@ -188,15 +188,17 @@ function extrairJSON(text: string, fonte: string): unknown {
 
 // Modelos de IA — cascata com fallback automático
 // IMPORTANTE: OpenRouter usa tier pago (sem :free) para evitar rate limit global
-const GEMINI_MODELS = ["gemini-2.0-flash-lite", "gemini-2.0-flash", "gemini-1.5-flash"]
+const GEMINI_MODELS = ["gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-1.5-flash"]
 const GROQ_MODELS = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"]
 const CEREBRAS_MODELS = ["llama-3.3-70b", "llama3.1-8b"]
 const OPENROUTER_MODELS = [
-  "meta-llama/llama-3.1-8b-instruct",
-  "mistralai/mistral-7b-instruct",
-  "google/gemma-2-9b-it",
-  "meta-llama/llama-3.3-70b-instruct",
+  "meta-llama/llama-3.3-70b-instruct:free",
+  "meta-llama/llama-3.1-8b-instruct:free",
+  "google/gemma-2-9b-it:free",
+  "deepseek/deepseek-chat:free",
+  "mistralai/mistral-nemo:free",
   "deepseek/deepseek-chat-v3-0324",
+  "meta-llama/llama-3.3-70b-instruct",
 ]
 
 async function fetchComTimeout(url: string, options: RequestInit, timeoutMs = 20000): Promise<Response> {
@@ -270,28 +272,30 @@ async function chamarIA(userPrompt: string): Promise<unknown> {
 
   if (!openrouterKey && !groqKey && !cerebrasKey && !geminiKey) throw new Error("Nenhuma API key de IA configurada")
 
-  // 1º — OpenRouter pago (sem :free): confiável enquanto houver crédito
-  if (openrouterKey) {
-    for (const model of OPENROUTER_MODELS) {
+  // 1º — Gemini (cota diária generosa, mais confiável para este volume)
+  if (geminiKey) {
+    const payload = {
+      contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+      systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+      generationConfig: { temperature: 0.2, maxOutputTokens: 8192, responseMimeType: "application/json" },
+    }
+    for (const model of GEMINI_MODELS) {
       try {
-        const result = await chamarOpenAICompat(
-          "https://openrouter.ai/api/v1/chat/completions",
-          {
-            "Authorization": `Bearer ${openrouterKey}`,
-            "HTTP-Referer": "https://remunaia.com.br",
-            "X-Title": "RemunaIA",
-          },
-          model,
-          userPrompt,
-        )
-        if (!result.ok) { console.error(`OpenRouter ${model} ${result.status}:`, result.err); continue }
-        if (!result.text) { console.error(`OpenRouter ${model} resposta vazia`); continue }
-        return extrairJSON(result.text, model)
-      } catch (e) { console.error(`OpenRouter ${model} exception:`, (e as Error).message); continue }
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`
+        const res = await fetchComTimeout(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) })
+        if (!res.ok) {
+          console.error(`Gemini ${model} ${res.status}:`, (await res.text()).substring(0, 200))
+          continue
+        }
+        const data = await res.json()
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text as string | undefined
+        if (!text) { console.error(`Gemini ${model} resposta vazia`); continue }
+        return extrairJSON(text, model)
+      } catch (e) { console.error(`Gemini ${model} exception:`, (e as Error).message); continue }
     }
   }
 
-  // 2º — Groq (gratuito, limite diário de tokens)
+  // 2º — Groq (gratuito, limite de tokens por minuto)
   if (groqKey) {
     for (const model of GROQ_MODELS) {
       try {
@@ -325,26 +329,24 @@ async function chamarIA(userPrompt: string): Promise<unknown> {
     }
   }
 
-  // 4º — Gemini (fallback final)
-  if (geminiKey) {
-    const payload = {
-      contents: [{ role: "user", parts: [{ text: userPrompt }] }],
-      systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
-      generationConfig: { temperature: 0.2, maxOutputTokens: 8192, responseMimeType: "application/json" },
-    }
-    for (const model of GEMINI_MODELS) {
+  // 4º — OpenRouter (modelos :free primeiro, depois pagos se houver crédito)
+  if (openrouterKey) {
+    for (const model of OPENROUTER_MODELS) {
       try {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`
-        const res = await fetchComTimeout(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) })
-        if (!res.ok) {
-          console.error(`Gemini ${model} ${res.status}:`, (await res.text()).substring(0, 200))
-          continue
-        }
-        const data = await res.json()
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text as string | undefined
-        if (!text) { console.error(`Gemini ${model} resposta vazia`); continue }
-        return extrairJSON(text, model)
-      } catch (e) { console.error(`Gemini ${model} exception:`, (e as Error).message); continue }
+        const result = await chamarOpenAICompat(
+          "https://openrouter.ai/api/v1/chat/completions",
+          {
+            "Authorization": `Bearer ${openrouterKey}`,
+            "HTTP-Referer": "https://remunaia.com.br",
+            "X-Title": "RemunaIA",
+          },
+          model,
+          userPrompt,
+        )
+        if (!result.ok) { console.error(`OpenRouter ${model} ${result.status}:`, result.err); continue }
+        if (!result.text) { console.error(`OpenRouter ${model} resposta vazia`); continue }
+        return extrairJSON(result.text, model)
+      } catch (e) { console.error(`OpenRouter ${model} exception:`, (e as Error).message); continue }
     }
   }
 
@@ -357,23 +359,22 @@ async function chamarIASimples(prompt: string): Promise<unknown> {
   const openrouterKey = Deno.env.get("OPENROUTER_API_KEY")
   const cerebrasKey = Deno.env.get("CEREBRAS_API_KEY")
 
-  // 1º — OpenRouter pago
-  if (openrouterKey) {
-    for (const model of OPENROUTER_MODELS) {
+  // 1º — Gemini
+  if (geminiKey) {
+    for (const model of GEMINI_MODELS) {
       try {
-        const result = await chamarOpenAICompatSimples(
-          "https://openrouter.ai/api/v1/chat/completions",
-          {
-            "Authorization": `Bearer ${openrouterKey}`,
-            "HTTP-Referer": "https://remunaia.com.br",
-            "X-Title": "RemunaIA",
-          },
-          model,
-          prompt,
-        )
-        if (!result.ok || !result.text) { continue }
-        return extrairJSON(result.text, model)
-      } catch (e) { console.error(`OpenRouter simples ${model} exception:`, (e as Error).message); continue }
+        const payload = {
+          contents: [{ role: "user", parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.1, maxOutputTokens: 512, responseMimeType: "application/json" },
+        }
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`
+        const res = await fetchComTimeout(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }, 15000)
+        if (!res.ok) { console.error(`Gemini simples ${model} ${res.status}`); continue }
+        const data = await res.json()
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text as string | undefined
+        if (!text) { continue }
+        return extrairJSON(text, model)
+      } catch (e) { console.error(`Gemini simples ${model} exception:`, (e as Error).message); continue }
     }
   }
 
@@ -409,22 +410,23 @@ async function chamarIASimples(prompt: string): Promise<unknown> {
     }
   }
 
-  // 4º — Gemini (fallback final)
-  if (geminiKey) {
-    for (const model of GEMINI_MODELS) {
+  // 4º — OpenRouter (modelos :free primeiro)
+  if (openrouterKey) {
+    for (const model of OPENROUTER_MODELS) {
       try {
-        const payload = {
-          contents: [{ role: "user", parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.1, maxOutputTokens: 512, responseMimeType: "application/json" },
-        }
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`
-        const res = await fetchComTimeout(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }, 15000)
-        if (!res.ok) { console.error(`Gemini simples ${model} ${res.status}`); continue }
-        const data = await res.json()
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text as string | undefined
-        if (!text) { continue }
-        return extrairJSON(text, model)
-      } catch (e) { console.error(`Gemini simples ${model} exception:`, (e as Error).message); continue }
+        const result = await chamarOpenAICompatSimples(
+          "https://openrouter.ai/api/v1/chat/completions",
+          {
+            "Authorization": `Bearer ${openrouterKey}`,
+            "HTTP-Referer": "https://remunaia.com.br",
+            "X-Title": "RemunaIA",
+          },
+          model,
+          prompt,
+        )
+        if (!result.ok || !result.text) { continue }
+        return extrairJSON(result.text, model)
+      } catch (e) { console.error(`OpenRouter simples ${model} exception:`, (e as Error).message); continue }
     }
   }
 
@@ -441,7 +443,7 @@ function toNum(v: unknown): number {
 // Esta função é a única fonte de verdade sobre o schema do resultado.
 // Qualquer alias que a IA retornar (campo renomeado, estrutura diferente) deve
 // ser tratado AQUI — jamais nos componentes do frontend.
-// Schema canônico: v60 (prompt_version = "v60")
+// Schema canônico: v63 (prompt_version = "v63")
 // ─────────────────────────────────────────────────────────────────────────────
 function normalizarEValidar(resultado: Record<string, unknown>): void {
 
@@ -662,7 +664,7 @@ serve(async (req) => {
         setor: body.setor,
         estado: body.estado,
         status: "processando",
-        prompt_version: "v60",
+        prompt_version: "v63",
         lote_id: body._lote_id || null,
       })
       .select()
