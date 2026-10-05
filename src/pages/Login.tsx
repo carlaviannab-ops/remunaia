@@ -23,6 +23,8 @@ function traduzirErro(msg: string): string {
     return 'Muitas tentativas. Aguarde alguns minutos e tente novamente.'
   if (msg.includes('Network') || msg.includes('fetch'))
     return 'Erro de conexão. Verifique sua internet e tente novamente.'
+  if (!msg || /database|upstream|unavailable|timeout|internal|5\d\d|\{\}/i.test(msg))
+    return 'Nosso servidor está temporariamente indisponível. Tente novamente em alguns minutos.'
   return 'Ocorreu um erro. Tente novamente.'
 }
 
